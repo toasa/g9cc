@@ -17,5 +17,6 @@ try() {
 
 try 0 0
 try 46 46
+try 26 20+6
 
 echo OK
