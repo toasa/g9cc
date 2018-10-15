@@ -13,7 +13,7 @@ Ltmp1:
 	movq	%rsp, %rbp
 Ltmp2:
 	.cfi_def_cfa_register %rbp
-	movl	$1200, %eax             ## imm = 0x4B0
+	movl	$8, %eax
 	movl	$0, -4(%rbp)
 	popq	%rbp
 	retq
