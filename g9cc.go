@@ -71,6 +71,7 @@ func tokenize(s string) {
 
 // Recursive-descent parser.
 
+// "tokens" array's index
 var pos int = 0
 
 const (
@@ -136,6 +137,7 @@ func expr() *Node {
     //    --(+)--    4
     //    |     |
     //    2     3
+
     for true {
         op := tokens[pos].ty
         if !(op == '+' || op == '-') {
@@ -148,15 +150,16 @@ func expr() *Node {
     if tokens[pos].ty != TK_EOF {
         error(fmt.Sprintf("stray token: %s", tokens[pos].input))
     }
-
+    
     return lhs
 }
 
+// regs(registers array)'s index
 var cur int;
 
 func gen(node *Node) string {
 
-    // go-langで配列orスライスをグローバル変数として定義(var regs []string = {...})できないのか？
+    // go-langで配列orスライスをグローバル変数として定義(var regs []string = {...}のように)できないのか？
     regs := []string{"rdi", "rsi", "r10", "r11", "r12", "r13", "r14", "r15", "NULL"}
 
     if node.ty == ND_NUM {
@@ -170,7 +173,7 @@ func gen(node *Node) string {
         return reg
     }
 
-    // lhs, rhsの値がそれぞれレジスタ(string)dst, srcに格納されている
+    // lhs, rhsの値がそれぞれレジスタ(string型)dst, srcに格納されている
     // destination, source
     dst := gen(node.lhs)
     src := gen(node.rhs)
