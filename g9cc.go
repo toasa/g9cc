@@ -14,12 +14,14 @@ const (
     TK_EOF
 )
 
+// tokenizer
 type Token struct {
     ty int // token type
     val int // number literal
     input string // token string
 }
 
+// tokenized済のtokenをこの配列に格納する
 var tokens [100]Token
 
 func tokenize(s string) {
@@ -67,11 +69,124 @@ func tokenize(s string) {
     tokens[i_tokens].ty = TK_EOF
 }
 
-// An error reporting function.
+// Recursive-descent parser.
 
+var pos int = 0
+
+const (
+    ND_NUM = 256
+)
+
+type Node struct {
+    ty int // node type
+    lhs *Node // left-hand side
+    rhs *Node // right-hand side
+    val int // number literal
+}
+
+func new_node(op int, lhs *Node, rhs *Node) *Node {
+    n := new(Node) // new()関数でNode型のポインタを返す
+    n.ty = op
+    n.lhs = lhs
+    n.rhs = rhs
+
+    return n
+}
+
+func new_node_num(val int) *Node {
+    n := new(Node)
+    n.ty = TK_NUM
+    n.val = val
+    return n
+}
+
+// An error reporting function.
 func fail(i int) {
     fmt.Printf("unexpected token: %s\n", tokens[i].input)
     os.Exit(1)
+}
+
+func error(msgs ...string) {
+    for _, msg := range msgs {
+        fmt.Println(msg)
+    }
+    os.Exit(1)
+}
+
+func number() *Node {
+    if tokens[pos].ty == TK_NUM {
+        n := new_node_num(tokens[pos].val)
+        pos++
+        return n;
+    }
+
+    error(fmt.Sprintf("number expected, but got %s", tokens[pos].input))
+    return nil
+}
+
+// expression
+func expr() *Node {
+    var lhs *Node = number()
+
+    // この文はすごい
+    // 2 + 3 - 4から以下の構文木を作成した
+    //
+    //       ---(-)---
+    //       |       |
+    //    --(+)--    4
+    //    |     |
+    //    2     3
+    for true {
+        op := tokens[pos].ty
+        if !(op == '+' || op == '-') {
+            break
+        }
+        pos++
+        lhs = new_node(op, lhs, number())
+    }
+
+    if tokens[pos].ty != TK_EOF {
+        error(fmt.Sprintf("stray token: %s", tokens[pos].input))
+    }
+
+    return lhs
+}
+
+var cur int;
+
+func gen(node *Node) string {
+
+    // go-langで配列orスライスをグローバル変数として定義(var regs []string = {...})できないのか？
+    regs := []string{"rdi", "rsi", "r10", "r11", "r12", "r13", "r14", "r15", "NULL"}
+
+    if node.ty == ND_NUM {
+        reg := regs[cur]
+        cur++
+        if reg == "NULL" {
+            error("register exhausted")
+        }
+        // 汎用レジスタregにnode.valを代入
+        fmt.Printf("	mov %s, %d\n", reg, node.val)
+        return reg
+    }
+
+    // lhs, rhsの値がそれぞれレジスタ(string)dst, srcに格納されている
+    // destination, source
+    dst := gen(node.lhs)
+    src := gen(node.rhs)
+
+    switch node.ty {
+    case '+':
+        fmt.Printf("	add %s, %s\n", dst, src)
+        return dst
+    case '-':
+        fmt.Printf("	sub %s, %s\n", dst, src)
+        return dst
+    default:
+        error("unknown operator")
+    }
+
+    return "NULL"
 }
 
 func main() {
@@ -81,66 +196,28 @@ func main() {
         return
     }
 
-    // argv := []rune(os.Args[1])
-    argv := os.Args[1] + "\000"
+    // 標準入力からの文字列に終端文字を追加する. parseをかんたんにするため
+    tokenize(os.Args[1] + "\000")
 
-    tokenize(argv)
+    // print tokens
+    // for _, t := range tokens {
+    //     if t.ty == TK_EOF {
+    //         fmt.Printf("EOF\n\n")
+    //         break
+    //     }
+    //     fmt.Printf("%+v\n", t)
+    // }
+
+    var node *Node = expr()
 
     // fmt.Println("	.section	__TEXT,__text,regular,pure_instructions")
     // fmt.Println("	.macosx_version_min 10, 12")
+    fmt.Println("	.intel_syntax noprefix")
     fmt.Println("	.globl	_main")
-    // fmt.Println("	.p2align	4, 0x90")
-    fmt.Println("_main:                                  ## @main")
-    // fmt.Println(".cfi_startproc")
-    // fmt.Println("## BB#0:")
-    // fmt.Println("	pushq	%rbp")
-    // fmt.Println("Ltmp0:")
-    // fmt.Println("	.cfi_def_cfa_offset 16")
-    // fmt.Println("Ltmp1:")
-    // fmt.Println("	.cfi_offset %rbp, -16")
-    // fmt.Println("	movq	%rsp, %rbp")
-    // fmt.Println("Ltmp2:")
-    // fmt.Println("	.cfi_def_cfa_register %rbp")
+    fmt.Println("_main:")
 
-    if (tokens[0].ty != TK_NUM) {
-        fail(0)
-    }
-    fmt.Printf("	movl	$%d, %%eax    ## imm = 0x4B0\n", tokens[0].val)
-
-    i := 1
-    for tokens[i].ty != TK_EOF {
-
-        if tokens[i].ty == '+' {
-            i++
-            if tokens[i].ty != TK_NUM {
-                fmt.Println("hom")
-            }
-            fmt.Printf("	add	   $%d, %%eax\n", tokens[i].val);
-            i++
-            continue
-        }
-
-        if tokens[i].ty == '-' {
-            i++
-            if tokens[i].ty != TK_NUM {
-                fmt.Println("pom")
-            }
-            fmt.Printf("	sub	   $%d, %%eax\n", tokens[i].val);
-            i++
-            continue
-        }
-
-        fmt.Println("dom")
-        fail(i)
-    }
-
-    // fmt.Println("	movl	$0, -4(%rbp)")
-    // fmt.Println("	popq	%rbp")
-    fmt.Println("	retq")
-    // fmt.Println("	.cfi_endproc")
-    fmt.Printf("\n")
-    // fmt.Println(".subsections_via_symbols")
-
+    fmt.Printf("	mov rax, %s\n", gen(node))
+    fmt.Printf("	ret\n")
 }
 
 func Isdigit(c uint8) bool {
