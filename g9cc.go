@@ -14,7 +14,7 @@ const (
     TK_EOF
 )
 
-// tokenizer
+// Tokenizer
 type Token struct {
     ty int // token type
     val int // number literal
@@ -150,46 +150,168 @@ func expr() *Node {
     if tokens[pos].ty != TK_EOF {
         error(fmt.Sprintf("stray token: %s", tokens[pos].input))
     }
-    
+
     return lhs
 }
+
+// Intermediate representation
+const (
+    IR_IMM = iota // immediate value
+    IR_MOV
+    IR_RETURN
+    IR_KILL
+    IR_NOP
+)
+
+type IR struct {
+    op int
+    lhs int
+    rhs int
+}
+
+func new_ir(op int, lhs int, rhs int) *IR {
+    var ir *IR = new(IR)
+    ir.op = op
+    ir.lhs = lhs
+    ir.rhs = rhs
+    return ir
+}
+
+// 中間表現を格納する配列
+var ins [1000]*IR
+// index of ins
+var inp int
+// register number
+var regno int
 
 // regs(registers array)'s index
 var cur int;
 
-func gen(node *Node) string {
+func assert(b bool) {
+    if !b {
+        error("assert error")
+    }
+}
 
-    // go-langで配列orスライスをグローバル変数として定義(var regs []string = {...}のように)できないのか？
-    regs := []string{"rdi", "rsi", "r10", "r11", "r12", "r13", "r14", "r15", "NULL"}
+func gen_ir_sub(node *Node) int {
 
     if node.ty == ND_NUM {
-        reg := regs[cur]
-        cur++
-        if reg == "NULL" {
-            error("register exhausted")
+        var r int = regno
+        regno++
+        ins[inp] = new_ir(IR_IMM, r, node.val)
+        inp++
+        return r;
+    }
+
+    if !(node.ty == '+' || node.ty == '-') {
+        error("operator expected")
+    }
+
+    var lhs int = gen_ir_sub(node.lhs)
+    var rhs int = gen_ir_sub(node.rhs)
+
+    ins[inp] = new_ir(node.ty, lhs, rhs)
+    inp++
+    ins[inp] = new_ir(IR_KILL, rhs, 0)
+    inp++
+
+    return lhs
+}
+
+// ASTを引数にとり、中間表現を返す
+// irは {op: , lhs: , rhs : }からなる
+// op = numのとき => {IR_IMM, register_index, num_value}
+// op = '+'のとき => {'+', lhsの値が格納されたregisterのindex, rhsの値が格納されたregisterのindex}
+// opが'+'or'-'の直後 => {IR_KILL, rhsの値が格納されたregisterのindex, 0}
+// ここで決めたregisterのindexは確定ではなく, alloc_regs()で配列insを一つひとつ読みながら
+// 最終的なregister を決定する
+func gen_ir(node *Node) {
+    var r int = gen_ir_sub(node)
+    ins[inp] = new_ir(IR_RETURN, r, 0)
+    inp++
+}
+
+// Register allocator
+var regs [8]string
+
+var used [8]bool
+
+var reg_map[1000]int
+
+func alloc(ir_reg int) int {
+    if reg_map[ir_reg] != -1 {
+        var r int = reg_map[ir_reg]
+        assert(used[r])
+        return r
+    }
+
+    for i := 0; i < len(regs); i++ {
+        if used[i] {
+            continue
         }
-        // 汎用レジスタregにnode.valを代入
-        fmt.Printf("	mov %s, %d\n", reg, node.val)
-        return reg
+        used[i] = true
+        reg_map[ir_reg] = i
+        return i
     }
 
-    // lhs, rhsの値がそれぞれレジスタ(string型)dst, srcに格納されている
-    // destination, source
-    dst := gen(node.lhs)
-    src := gen(node.rhs)
+    error("register exhausted")
+    return 0 // ここには到達しないため(intを返さないと怒るコンパイラを鎮める他に)イミなし
+}
 
-    switch node.ty {
-    case '+':
-        fmt.Printf("	add %s, %s\n", dst, src)
-        return dst
-    case '-':
-        fmt.Printf("	sub %s, %s\n", dst, src)
-        return dst
-    default:
-        error("unknown operator")
+func kill(r int) {
+    assert(used[r])
+    used[r] = false
+}
+
+// 中間表現の命令配列insの各要素に対し、必要ならレジスタを割り当てていく
+func alloc_regs() {
+    for i := 0; i < inp; i++ {
+        var ir *IR = ins[i]
+
+        switch ir.op {
+        case IR_IMM:
+            ir.lhs = alloc(ir.lhs)
+        case IR_MOV, '+', '-':
+            ir.lhs = alloc(ir.lhs)
+            ir.rhs = alloc(ir.rhs)
+        case IR_RETURN:
+            kill(reg_map[ir.lhs])
+        case IR_KILL:
+            kill(reg_map[ir.lhs])
+            ir.op = IR_NOP
+        default:
+            error("unknown operator")
+        }
     }
+}
 
-    return "NULL"
+// Code generator
+// ins内の各irに対し、ir.opから機械的にアセンブリを生成していく
+func gen_x86() {
+
+    regs = [8]string{"rdi", "rsi", "r10", "r11", "r12", "r13", "r14", "r15"}
+
+    for i := 0; i < inp; i++ {
+        var ir *IR = ins[i]
+
+        switch ir.op {
+        case IR_IMM:
+            fmt.Printf("    mov %s, %d\n", regs[ir.lhs], ir.rhs)
+        case IR_MOV:
+            fmt.Printf("    mov %s, %s\n", regs[ir.lhs], regs[ir.rhs])
+        case IR_RETURN:
+            fmt.Printf("    mov rax, %s\n", regs[ir.lhs])
+            fmt.Printf("    ret\n")
+        case '+':
+            fmt.Printf("    add %s, %s\n", regs[ir.lhs], regs[ir.rhs])
+        case '-':
+            fmt.Printf("    sub %s, %s\n", regs[ir.lhs], regs[ir.rhs])
+        case IR_NOP:
+
+        default:
+            error("unknown operator")
+        }
+    }
 }
 
 func main() {
@@ -199,28 +321,48 @@ func main() {
         return
     }
 
+    for i := 0; i < len(reg_map); i++ {
+        reg_map[i] = -1
+    }
+
     // 標準入力からの文字列に終端文字を追加する. parseをかんたんにするため
     tokenize(os.Args[1] + "\000")
 
-    // print tokens
-    // for _, t := range tokens {
-    //     if t.ty == TK_EOF {
-    //         fmt.Printf("EOF\n\n")
-    //         break
-    //     }
-    //     fmt.Printf("%+v\n", t)
-    // }
-
     var node *Node = expr()
+
+    gen_ir(node)
+
+    // printIns()
+    //
+    // fmt.Println("==================================")
+
+    alloc_regs()
+
+    // printIns()
 
     // fmt.Println("	.section	__TEXT,__text,regular,pure_instructions")
     // fmt.Println("	.macosx_version_min 10, 12")
-    fmt.Println("	.intel_syntax noprefix")
-    fmt.Println("	.globl	_main")
-    fmt.Println("_main:")
+    fmt.Println("    .intel_syntax noprefix")
+    fmt.Println("    .globl _main") // ここを".global main",
+    fmt.Println("_main:") // "main:"と書くと, ruiさんバージョンになる
 
-    fmt.Printf("	mov rax, %s\n", gen(node))
-    fmt.Printf("	ret\n")
+    gen_x86()
+}
+
+func printTokens() {
+    for _, t := range tokens {
+        if t.ty == TK_EOF {
+            fmt.Printf("EOF\n\n")
+            break
+        }
+        fmt.Printf("%+v\n", t)
+    }
+}
+
+func printIns() {
+    for i := 0; i < inp; i++ {
+        fmt.Printf("%+v\n", ins[i])
+    }
 }
 
 func Isdigit(c uint8) bool {
