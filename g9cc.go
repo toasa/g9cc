@@ -1,6 +1,30 @@
 // アセンブリ言語の構文には, AT&TのものとIntelのものがある。
 // レジスタ名に%がつくのがAT&T, そうでないものがIntel
 
+// 大まかな流れ
+//
+// input from command line
+// |
+// |   tokenize()
+// v
+// tokens *Vector (tokens.dataは*Token型の配列)
+// |
+// |   expr()
+// v
+// node *Node: 構文木のroot node (root nodeさえわかれば、他のnodeへは辿って行けるので*Vectorによるwrapは不要)
+// |
+// |   gen_ir()
+// v
+// irv *Vector (irv.dataは*IR型の配列)
+// |
+// |   alloc_regs()
+// v
+// irv : 中間表現の完成（一つ前のirvはレジスタ割当に無駄がある）
+// |
+// |   gen_x86()
+// v
+// assembly code
+
 package main
 
 import (
@@ -9,8 +33,37 @@ import (
     // "strconv"
 )
 
+// Vector
+// 異なるデータ型*Token, *IRなどをスライスとして扱うための構造体(wrapperみたいなものか?)
+type Vector struct {
+    data []interface{}
+    capacity int
+    len int
+}
+
+func new_vec() *Vector {
+    var v *Vector = new(Vector)
+    v.capacity = 16
+    v.len = 0
+    v.data = make([]interface{}, v.capacity)
+    return v
+}
+
+func vec_push(v *Vector, elem interface{}) {
+    if v.len == v.capacity {
+        v.capacity *= 2
+        // v.dataの容量を増やすための処理
+        for i := 0; i < v.capacity; i++ {
+            var a interface{}
+            v.data = append(v.data, a)
+        }
+    }
+    v.data[v.len] = elem
+    v.len++
+}
+
 const (
-    TK_NUM = iota + 256
+    TK_NUM = iota + 256 // Number Literal
     TK_EOF
 )
 
@@ -21,12 +74,18 @@ type Token struct {
     input string // token string
 }
 
-// tokenized済のtokenをこの配列に格納する
-var tokens [100]Token
+func add_token(v *Vector, ty int, input string) *Token {
+    t := new(Token)
+    t.ty = ty
+    t.input = input
+    vec_push(v, t)
+    return t
+}
 
-func tokenize(s string) {
-    // index of tokens, input
-    i_tokens := 0
+func tokenize(s string) *Vector {
+    var v *Vector = new_vec()
+
+    // index of input
     i_input := 0
 
     for s[i_input] != '\000' {
@@ -39,10 +98,8 @@ func tokenize(s string) {
 
         // + or -
         if s[i_input] == '+' || s[i_input] == '-' {
-            tokens[i_tokens].ty = int(s[i_input])
-            tokens[i_tokens].input = string(s[i_input])
+            add_token(v, int(s[i_input]), string(s[i_input]))
             i_input++
-            i_tokens++
             continue
         }
 
@@ -54,10 +111,9 @@ func tokenize(s string) {
                 num = num * 10 + int(s[i_input] - '0')
             }
 
-            tokens[i_tokens].ty = TK_NUM
-            tokens[i_tokens].input = string(num)
-            tokens[i_tokens].val = num
-            i_tokens++
+            var t *Token = add_token(v, TK_NUM, string(num))
+
+            t.val = num
             continue
         }
 
@@ -66,13 +122,12 @@ func tokenize(s string) {
         os.Exit(1)
     }
 
-    tokens[i_tokens].ty = TK_EOF
+
+    add_token(v, TK_EOF, s);
+    return v
 }
 
 // Recursive-descent parser.
-
-// "tokens" array's index
-var pos int = 0
 
 const (
     ND_NUM = 256
@@ -84,6 +139,10 @@ type Node struct {
     rhs *Node // right-hand side
     val int // number literal
 }
+
+var tokens *Vector
+// "tokens" array's index
+var pos int = 0
 
 func new_node(op int, lhs *Node, rhs *Node) *Node {
     n := new(Node) // new()関数でNode型のポインタを返す
@@ -102,10 +161,10 @@ func new_node_num(val int) *Node {
 }
 
 // An error reporting function.
-func fail(i int) {
-    fmt.Printf("unexpected token: %s\n", tokens[i].input)
-    os.Exit(1)
-}
+// func fail(i int) {
+//     fmt.Printf("unexpected token: %s\n", tokens[i].input)
+//     os.Exit(1)
+// }
 
 func error(msgs ...string) {
     for _, msg := range msgs {
@@ -114,15 +173,24 @@ func error(msgs ...string) {
     os.Exit(1)
 }
 
+func assert(b bool, msg string) {
+    if !b {
+        error(msg)
+    }
+}
+
 func number() *Node {
-    if tokens[pos].ty == TK_NUM {
-        n := new_node_num(tokens[pos].val)
-        pos++
-        return n;
+    t, ok := tokens.data[pos].(*Token)
+    if !ok {
+        error("Not *Token type is in tokens.data[]")
     }
 
-    error(fmt.Sprintf("number expected, but got %s", tokens[pos].input))
-    return nil
+    if t.ty != TK_NUM {
+        error(fmt.Sprintf("number expected, but got %s", t.input))
+    }
+    pos++
+
+    return new_node_num(t.val)
 }
 
 // expression
@@ -139,7 +207,12 @@ func expr() *Node {
     //    2     3
 
     for true {
-        op := tokens[pos].ty
+        t, ok := tokens.data[pos].(*Token)
+        if !ok {
+            error("Not *Token type is in tokens.data[]")
+        }
+
+        op := t.ty
         if !(op == '+' || op == '-') {
             break
         }
@@ -147,8 +220,13 @@ func expr() *Node {
         lhs = new_node(op, lhs, number())
     }
 
-    if tokens[pos].ty != TK_EOF {
-        error(fmt.Sprintf("stray token: %s", tokens[pos].input))
+    t, ok := tokens.data[pos].(*Token)
+    if !ok {
+        error("Not *Token type is in tokens.data[]")
+    }
+
+    if t.ty != TK_EOF {
+        error(fmt.Sprintf("stray token: %s", t.input))
     }
 
     return lhs
@@ -177,43 +255,26 @@ func new_ir(op int, lhs int, rhs int) *IR {
     return ir
 }
 
-// 中間表現を格納する配列
-var ins [1000]*IR
-// index of ins
-var inp int
-// register number
+
 var regno int
 
-// regs(registers array)'s index
-var cur int;
-
-func assert(b bool) {
-    if !b {
-        error("assert error")
-    }
-}
-
-func gen_ir_sub(node *Node) int {
+func gen_ir_sub(v *Vector, node *Node) int {
+    // var regno int
 
     if node.ty == ND_NUM {
         var r int = regno
         regno++
-        ins[inp] = new_ir(IR_IMM, r, node.val)
-        inp++
+        vec_push(v, new_ir(IR_IMM, r, node.val))
         return r;
     }
 
-    if !(node.ty == '+' || node.ty == '-') {
-        error("operator expected")
-    }
+    assert((node.ty == '+' || node.ty == '-'), "operator expected")
 
-    var lhs int = gen_ir_sub(node.lhs)
-    var rhs int = gen_ir_sub(node.rhs)
+    var lhs int = gen_ir_sub(v, node.lhs)
+    var rhs int = gen_ir_sub(v, node.rhs)
 
-    ins[inp] = new_ir(node.ty, lhs, rhs)
-    inp++
-    ins[inp] = new_ir(IR_KILL, rhs, 0)
-    inp++
+    vec_push(v, new_ir(node.ty, lhs, rhs))
+    vec_push(v, new_ir(IR_KILL, rhs, 0))
 
     return lhs
 }
@@ -225,32 +286,38 @@ func gen_ir_sub(node *Node) int {
 // opが'+'or'-'の直後 => {IR_KILL, rhsの値が格納されたregisterのindex, 0}
 // ここで決めたregisterのindexは確定ではなく, alloc_regs()で配列insを一つひとつ読みながら
 // 最終的なregister を決定する
-func gen_ir(node *Node) {
-    var r int = gen_ir_sub(node)
-    ins[inp] = new_ir(IR_RETURN, r, 0)
-    inp++
+func gen_ir(node *Node) *Vector{
+    var v *Vector = new_vec()
+    var r int = gen_ir_sub(v, node)
+    vec_push(v, new_ir(IR_RETURN, r, 0))
+    return v
 }
 
 // Register allocator
 var regs [8]string
+var used [len(regs)]bool
 
-var used [8]bool
-
-var reg_map[1000]int
+// IRの命令数分の要素をもつ配列(alloc_regs()で初期化)
+var reg_map []int
 
 func alloc(ir_reg int) int {
+    // 演算子の場合こちらが走る
     if reg_map[ir_reg] != -1 {
         var r int = reg_map[ir_reg]
-        assert(used[r])
+        assert(used[r], "allocation error")
         return r
     }
 
+    // i はレジスタの配列regsのindex
+    // 数値の場合こちらが走る
     for i := 0; i < len(regs); i++ {
+        // index i のレジスタが使用済みの場合
         if used[i] {
             continue
         }
+        // index i のレジスタが未使用の場合
         used[i] = true
-        reg_map[ir_reg] = i
+        reg_map[ir_reg] = i // registerへのmapping
         return i
     }
 
@@ -259,17 +326,26 @@ func alloc(ir_reg int) int {
 }
 
 func kill(r int) {
-    assert(used[r])
+    assert(used[r], "kill error")
     used[r] = false
 }
 
 // 中間表現の命令配列insの各要素に対し、必要ならレジスタを割り当てていく
-func alloc_regs() {
-    for i := 0; i < inp; i++ {
-        var ir *IR = ins[i]
+func alloc_regs(irv *Vector) {
+
+    for i := 0; i < irv.len; i++ {
+        reg_map = append(reg_map, -1)
+    }
+
+    for i := 0; i < irv.len; i++ {
+        ir, ok := irv.data[i].(*IR)
+        if !ok {
+            error("Not *IR type is in irv.data[]")
+        }
 
         switch ir.op {
         case IR_IMM:
+            // 数値のとき格納先のレジスタのindexを調整する(->数値の値自体(rhs)はいじらない)
             ir.lhs = alloc(ir.lhs)
         case IR_MOV, '+', '-':
             ir.lhs = alloc(ir.lhs)
@@ -277,6 +353,7 @@ func alloc_regs() {
         case IR_RETURN:
             kill(reg_map[ir.lhs])
         case IR_KILL:
+            // レジスタに格納された即値で、不要になったときに、そのレジスタを開放する操作
             kill(reg_map[ir.lhs])
             ir.op = IR_NOP
         default:
@@ -286,20 +363,23 @@ func alloc_regs() {
 }
 
 // Code generator
-// ins内の各irに対し、ir.opから機械的にアセンブリを生成していく
-func gen_x86() {
+// irv.data[]内の各ir(中間表現)に対し、ir.opから機械的にアセンブリを生成していく
+func gen_x86(irv *Vector) {
 
     regs = [8]string{"rdi", "rsi", "r10", "r11", "r12", "r13", "r14", "r15"}
 
-    for i := 0; i < inp; i++ {
-        var ir *IR = ins[i]
+    for i := 0; i < irv.len; i++ {
+        ir, ok := irv.data[i].(*IR)
+        if !ok {
+            error("Not *IR type is in irv.data[]")
+        }
 
         switch ir.op {
         case IR_IMM:
             fmt.Printf("    mov %s, %d\n", regs[ir.lhs], ir.rhs)
         case IR_MOV:
             fmt.Printf("    mov %s, %s\n", regs[ir.lhs], regs[ir.rhs])
-        case IR_RETURN:
+        case IR_RETURN: // lhsに格納された値をアキュムレータに渡し、戻り値とする
             fmt.Printf("    mov rax, %s\n", regs[ir.lhs])
             fmt.Printf("    ret\n")
         case '+':
@@ -321,24 +401,16 @@ func main() {
         return
     }
 
-    for i := 0; i < len(reg_map); i++ {
-        reg_map[i] = -1
-    }
-
     // 標準入力からの文字列に終端文字を追加する. parseをかんたんにするため
-    tokenize(os.Args[1] + "\000")
+    tokens = tokenize(os.Args[1] + "\000")
 
     var node *Node = expr()
 
-    gen_ir(node)
+    var irv *Vector = gen_ir(node)
 
-    // printIns()
-    //
-    // fmt.Println("==================================")
-
-    alloc_regs()
-
-    // printIns()
+    // printVector(irv)
+    alloc_regs(irv)
+    // printVector(irv)
 
     // fmt.Println("	.section	__TEXT,__text,regular,pure_instructions")
     // fmt.Println("	.macosx_version_min 10, 12")
@@ -346,22 +418,22 @@ func main() {
     fmt.Println("    .globl _main") // ここを".global main",
     fmt.Println("_main:") // "main:"と書くと, ruiさんバージョンになる
 
-    gen_x86()
+    gen_x86(irv)
 }
 
-func printTokens() {
-    for _, t := range tokens {
-        if t.ty == TK_EOF {
-            fmt.Printf("EOF\n\n")
-            break
+func printVector(v *Vector) {
+    switch v.data[0].(type) {
+    case *Token:
+        for i := 0; i < v.len; i++ {
+            fmt.Printf("%+v\n", v.data[i])
         }
-        fmt.Printf("%+v\n", t)
-    }
-}
+        fmt.Printf("=== END OF PRINT TOKEN ===\n\n")
 
-func printIns() {
-    for i := 0; i < inp; i++ {
-        fmt.Printf("%+v\n", ins[i])
+    case *IR:
+        for i := 0; i < v.len; i++ {
+            fmt.Printf("%+v\n", v.data[i])
+        }
+        fmt.Printf("=== END OF PRINT IR ===\n\n")
     }
 }
 
