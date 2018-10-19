@@ -1,4 +1,4 @@
-g9cc: g9cc.go
+g9cc: main.go
 
 test: g9cc
 	./test.sh

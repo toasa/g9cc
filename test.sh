@@ -4,7 +4,7 @@ try() {
     expected="$1"
     input="$2"
 
-    go run g9cc.go "$input" > tmp.s
+    go run main.go "$input" > tmp.s
     gcc -o tmp tmp.s
     ./tmp
     actual="$?"
