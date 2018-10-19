@@ -39,18 +39,42 @@ func number() *Node {
     return new_node_num(t.Val)
 }
 
-// expression
-func expr() *Node {
+func mul() *Node {
     var lhs *Node = number()
 
+    for true {
+        t, ok := tokens.Data[pos].(*Token)
+        if !ok {
+            Error("Not *Token type is in tokens.data[]")
+        }
+
+        op := t.Ty
+        if !(op == '*' || op == '/') {
+            return lhs
+        }
+        pos++
+        lhs = new_node(op, lhs, number())
+    }
+
+    // ここには通常到達しない
+    var err *Node
+    return err
+}
+
+// expression
+func expr() *Node {
+    
     // この文はすごい
-    // 2 + 3 - 4から以下の構文木を作成した
+    // 2 * 3 + 4, 2 + 3 * 4 から以下の構文木を作成した
+    // 正しく、掛け算が優先されている
     //
-    //       ---(-)---
-    //       |       |
-    //    --(+)--    4
-    //    |     |
-    //    2     3
+    //       ---(+)---        ---(+)---
+    //       |       |        |       |
+    //    --(*)--    4        2    --(*)--
+    //    |     |                  |     |
+    //    2     3                  3     4
+
+    var lhs *Node = mul()
 
     for true {
         t, ok := tokens.Data[pos].(*Token)
@@ -60,26 +84,25 @@ func expr() *Node {
 
         op := t.Ty
         if !(op == '+' || op == '-') {
-            break
+            return lhs
         }
         pos++
-        lhs = new_node(op, lhs, number())
+        lhs = new_node(op, lhs, mul())
     }
 
-    t, ok := tokens.Data[pos].(*Token)
-    if !ok {
-        Error("Not *Token type is in tokens.data[]")
-    }
-
-    if t.Ty != TK_EOF {
-        Error(fmt.Sprintf("stray token: %s", t.Input))
-    }
-
-    return lhs
+    // 通常ここには到達しない
+    var err *Node
+    return err
 }
 
 func Parse(v *Vector) *Node {
     tokens = v
     pos = 0
-    return expr()
+    var node *Node = expr()
+
+    t, _ := tokens.Data[pos].(*Token)
+    if t.Ty != TK_EOF {
+        Error(fmt.Sprintf("stray token: %s", t.Input))
+    }
+    return node
 }

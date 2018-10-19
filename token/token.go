@@ -29,8 +29,8 @@ func Tokenize(s string) *Vector {
             continue
         }
 
-        // + or -
-        if s[i_input] == '+' || s[i_input] == '-' {
+        // single-letter token
+        if s[i_input] == '+' || s[i_input] == '-' || s[i_input] == '*'{
             add_token(v, int(s[i_input]), string(s[i_input]))
             i_input++
             continue

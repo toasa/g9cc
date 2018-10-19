@@ -25,7 +25,7 @@ func gen(v *Vector, node *Node) int {
         return r;
     }
 
-    Assert((node.Ty == '+' || node.Ty == '-'), "operator expected")
+    Assert((node.Ty == '+' || node.Ty == '-' || node.Ty == '*'), "operator expected")
 
     var lhs int = gen(v, node.Lhs)
     var rhs int = gen(v, node.Rhs)

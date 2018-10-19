@@ -30,6 +30,12 @@ func Gen_x86(irv *Vector) {
             fmt.Printf("    add %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
         case '-':
             fmt.Printf("    sub %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+        case '*':
+            fmt.Printf("    mov rax, %s\n", Regs[ir.Rhs])
+            // mul reg: 予めrax(アキュムレータ)に格納された値と
+            //          regに格納された値の掛け算を行い,結果をraxに格納する
+            fmt.Printf("    mul %s\n", Regs[ir.Lhs])
+            fmt.Printf("    mov %s, rax\n", Regs[ir.Lhs])
         case IR_NOP:
 
         default:

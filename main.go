@@ -49,9 +49,9 @@ func main() {
 
     var irv *Vector = ir.Gen_ir(node)
 
-    // printVector(irv)
+    // PrintVector(irv)
     regalloc.Alloc_regs(irv)
-    // printVector(irv)
+    // PrintVector(irv)
 
     fmt.Println("    .intel_syntax noprefix")
     fmt.Println("    .globl _main") // ここを".global main",
