@@ -2,6 +2,7 @@ package codegen
 
 import (
     . "g9cc/common"
+    . "g9cc/util"
     . "g9cc/regalloc"
     "fmt"
 )

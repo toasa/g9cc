@@ -2,6 +2,7 @@ package ir
 
 import (
     . "g9cc/common"
+    . "g9cc/util"
 )
 
 func new_ir(op int, lhs int, rhs int) *IR {

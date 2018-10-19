@@ -2,6 +2,7 @@ package regalloc
 
 import (
     . "g9cc/common"
+    . "g9cc/util"
 )
 
 // Register allocator

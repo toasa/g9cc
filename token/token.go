@@ -2,6 +2,7 @@ package token
 
 import (
     . "g9cc/common"
+    . "g9cc/util"
     "fmt"
     "os"
 )

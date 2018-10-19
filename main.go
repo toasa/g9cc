@@ -28,6 +28,7 @@ import (
     "fmt"
     "os"
     . "g9cc/common"
+    . "g9cc/util"
     "g9cc/token"
     "g9cc/parse"
     "g9cc/ir"
@@ -41,6 +42,11 @@ func main() {
         fmt.Println("Usage: g9cc <code>")
         return
     }
+
+    // if os.Args[1] == "-test" {
+    //     util_test()
+    //     return
+    // }
 
     // 標準入力からの文字列に終端文字を追加する. parseをかんたんにするため
     var tokens *Vector = token.Tokenize(os.Args[1] + "\000")
