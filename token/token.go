@@ -30,7 +30,7 @@ func Tokenize(s string) *Vector {
         }
 
         // single-letter token
-        if s[i_input] == '+' || s[i_input] == '-' || s[i_input] == '*'{
+        if s[i_input] == '+' || s[i_input] == '-' || s[i_input] == '*' || s[i_input] == '/'{
             add_token(v, int(s[i_input]), string(s[i_input]))
             i_input++
             continue

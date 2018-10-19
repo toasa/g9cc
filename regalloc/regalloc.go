@@ -59,7 +59,7 @@ func Alloc_regs(irv *Vector) {
         case IR_IMM:
             // 数値のとき格納先のレジスタのindexを調整する(->数値の値自体(rhs)はいじらない)
             ir.Lhs = alloc(ir.Lhs)
-        case IR_MOV, '+', '-', '*':
+        case IR_MOV, '+', '-', '*', '/':
             ir.Lhs = alloc(ir.Lhs)
             ir.Rhs = alloc(ir.Rhs)
         case IR_RETURN:

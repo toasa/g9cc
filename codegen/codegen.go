@@ -36,6 +36,13 @@ func Gen_x86(irv *Vector) {
             //          regに格納された値の掛け算を行い,結果をraxに格納する
             fmt.Printf("    mul %s\n", Regs[ir.Lhs])
             fmt.Printf("    mov %s, rax\n", Regs[ir.Lhs])
+        case '/':
+            fmt.Printf("    mov rax, %s\n", Regs[ir.Lhs])
+            // convert quadword to octaword: 符号拡張(アキュムレータを拡張する)
+            // wordは4byteのこと? => ocは32byte?
+            fmt.Printf("    cqo\n")
+            fmt.Printf("    div %s\n", Regs[ir.Rhs])
+            fmt.Printf("    mov %s, rax\n", Regs[ir.Lhs])
         case IR_NOP:
 
         default:
