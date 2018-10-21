@@ -1,4 +1,4 @@
-package common
+package util
 
 import (
     "fmt"
@@ -21,13 +21,8 @@ func Assert(b bool, msg string) {
     }
 }
 
+
 // Vector
-// 異なるデータ型*Token, *IRなどをスライスとして扱うための構造体(wrapperみたいなものか?)
-type Vector struct {
-    Data []interface{}
-    Capacity int
-    Len int
-}
 
 func New_vec() *Vector {
     var v *Vector = new(Vector)
@@ -64,4 +59,31 @@ func PrintVector(v *Vector) {
         }
         fmt.Printf("=== END OF PRINT IR ===\n\n")
     }
+}
+
+
+// Map
+
+func New_map() *Map {
+    m := new(Map)
+    m.Keys = New_vec()
+    m.Vals = New_vec()
+
+    return m
+}
+
+func Map_put(m *Map, key string, val interface{}) {
+    Vec_push(m.Keys, key)
+    Vec_push(m.Vals, val)
+}
+
+func Map_get(m *Map, key string) interface{} {
+    for i := m.Keys.Len - 1; i >= 0; i-- {
+        // str, _ := mKeys.Data[i].(string)
+        if m.Keys.Data[i] == key {
+            return m.Vals.Data[i]
+        }
+    }
+
+    return nil
 }

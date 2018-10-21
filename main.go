@@ -43,10 +43,10 @@ func main() {
         return
     }
 
-    // if os.Args[1] == "-test" {
-    //     util_test()
-    //     return
-    // }
+    if os.Args[1] == "-test" {
+        Util_test()
+        return
+    }
 
     // 標準入力からの文字列に終端文字を追加する. parseをかんたんにするため
     var tokens *Vector = token.Tokenize(os.Args[1] + "\000")
