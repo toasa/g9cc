@@ -7,8 +7,16 @@ import (
 )
 
 var tokens *Vector
-// "tokens" array's index
+// "tokens.Data[]" array's index
 var pos int = 0
+
+func expect(ty int) {
+    t, _ := tokens.Data[pos].(*Token)
+    if t.Ty != ty {
+        Error(fmt.Sprintf("%c (%d) expected, but got %c (%d)", ty, ty, t.Ty, t.Ty))
+    }
+    pos++
+}
 
 func new_node(op int, lhs *Node, rhs *Node) *Node {
     n := new(Node) // new()関数でNode型のポインタを返す
@@ -16,13 +24,6 @@ func new_node(op int, lhs *Node, rhs *Node) *Node {
     n.Lhs = lhs
     n.Rhs = rhs
 
-    return n
-}
-
-func new_node_num(val int) *Node {
-    n := new(Node)
-    n.Ty = TK_NUM
-    n.Val = val
     return n
 }
 
@@ -37,7 +38,10 @@ func number() *Node {
     }
     pos++
 
-    return new_node_num(t.Val)
+    node := new(Node)
+    node.Ty = ND_NUM
+    node.Val = t.Val
+    return node
 }
 
 func mul() *Node {
@@ -98,14 +102,41 @@ func expr() *Node {
     return err
 }
 
+func stmt() *Node {
+    // ASTのroot node
+    node := new(Node)
+    node.Ty = ND_COMP_STMT
+    node.Stmts = New_vec()
+
+    for true {
+        t, _ := tokens.Data[pos].(*Token)
+        if t.Ty == TK_EOF {
+            return node
+        }
+
+        // expression?
+        e := new(Node)
+
+        if t.Ty == TK_RETURN {
+            pos++
+            e.Ty = ND_RETURN
+            e.Expr = expr()
+        } else {
+            e.Ty = ND_EXPR_STMT
+            e.Expr = expr()
+        }
+
+        Vec_push(node.Stmts, e)
+        expect(';')
+    }
+
+    err := new(Node)
+    return err
+}
+
 func Parse(v *Vector) *Node {
     tokens = v
     pos = 0
-    var node *Node = expr()
 
-    t, _ := tokens.Data[pos].(*Token)
-    if t.Ty != TK_EOF {
-        Error(fmt.Sprintf("stray token: %s", t.Input))
-    }
-    return node
+    return stmt()
 }

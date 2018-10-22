@@ -64,7 +64,7 @@ func Alloc_regs(irv *Vector) {
             ir.Lhs = alloc(ir.Lhs)
             ir.Rhs = alloc(ir.Rhs)
         case IR_RETURN:
-            kill(Reg_map[ir.Lhs])
+            ir.Lhs = alloc(ir.Lhs)
         case IR_KILL:
             // レジスタに格納された即値で、不要になったときに、そのレジスタを開放する操作
             kill(Reg_map[ir.Lhs])

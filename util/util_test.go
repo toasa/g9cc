@@ -1,3 +1,4 @@
+// this is go-lang ver. util test.
 package util
 
 import (

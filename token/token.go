@@ -4,7 +4,7 @@ import (
     . "g9cc/common"
     . "g9cc/util"
     "fmt"
-    "os"
+    "strings"
 )
 
 // Tokenizer
@@ -16,7 +16,9 @@ func add_token(v *Vector, ty int, input string) *Token {
     return t
 }
 
-func Tokenize(s string) *Vector {
+var keywords *Map
+
+func Scan(s string) *Vector {
     var v *Vector = New_vec()
 
     // index of input
@@ -25,23 +27,43 @@ func Tokenize(s string) *Vector {
     for s[i_input] != '\000' {
 
         // white space
-        if Isspace(s[i_input]) {
+        if isspace(s[i_input]) {
             i_input++
             continue
         }
 
         // single-letter token
-        if s[i_input] == '+' || s[i_input] == '-' || s[i_input] == '*' || s[i_input] == '/'{
+        if strings.Contains("+-*/;", string(s[i_input])) {
             add_token(v, int(s[i_input]), string(s[i_input]))
             i_input++
             continue
         }
 
+        // keyword
+        if isalpha(s[i_input]) || s[i_input] == '_' {
+
+            len := 1
+            for i := len + i_input; isalpha(s[i]) || isdigit(s[i]) || s[i] == '_'; {
+                len++
+                i = len + i_input
+            }
+            var name string = s[i_input:len + i_input]
+
+            ty, _ := Map_get(keywords, name).(int)
+            if ty == 0 {
+                Error(fmt.Sprintf("unknown identifier: %s", name))
+            }
+
+            add_token(v, ty, name)
+            i_input += len
+            continue
+        }
+
         // number
-        if Isdigit(s[i_input]) {
+        if isdigit(s[i_input]) {
             var num int = int(s[i_input] - '0')
             i_input++
-            for ; Isdigit(s[i_input]); i_input++ {
+            for ; isdigit(s[i_input]); i_input++ {
                 num = num * 10 + int(s[i_input] - '0')
             }
 
@@ -52,16 +74,21 @@ func Tokenize(s string) *Vector {
         }
 
         fmt.Println("what's up guys")
-        fmt.Printf("cannot tokenize: %s", s);
-        os.Exit(1)
+        Error(fmt.Sprintf("cannot tokenize: %s", s));
     }
-
 
     add_token(v, TK_EOF, s);
     return v
 }
 
-func Isdigit(c uint8) bool {
+func Tokenize(s string) *Vector {
+    keywords = New_map()
+    Map_put(keywords, "return", TK_RETURN)
+
+    return Scan(s)
+}
+
+func isdigit(c uint8) bool {
     if '0' <= c && c <= '9' {
         return true
     } else {
@@ -69,8 +96,16 @@ func Isdigit(c uint8) bool {
     }
 }
 
-func Isspace(c uint8) bool {
+func isspace(c uint8) bool {
     if c == ' ' {
+        return true
+    } else {
+        return false
+    }
+}
+
+func isalpha(c uint8) bool {
+    if ('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') {
         return true
     } else {
         return false

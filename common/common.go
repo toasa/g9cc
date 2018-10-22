@@ -19,6 +19,7 @@ type Map struct {
 
 const (
     TK_NUM = iota + 256 // Number Literal
+    TK_RETURN
     TK_EOF
 )
 
@@ -33,7 +34,10 @@ type Token struct {
 // parse.go
 
 const (
-    ND_NUM = 256
+    ND_NUM = iota + 256
+    ND_RETURN
+    ND_COMP_STMT
+    ND_EXPR_STMT
 )
 
 type Node struct {
@@ -41,6 +45,8 @@ type Node struct {
     Lhs *Node // left-hand side
     Rhs *Node // right-hand side
     Val int // number literal
+    Expr *Node
+    Stmts *Vector
 }
 
 
