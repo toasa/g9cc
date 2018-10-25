@@ -51,7 +51,12 @@ func Gen_x86(irv *Vector) {
         case IR_STORE:
             fmt.Printf("    mov [%s], %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
         case '+':
-            fmt.Printf("    add %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+            //fmt.Printf("    add %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+            if ir.Has_imm {
+                fmt.Printf("    add %s, %d\n", Regs[ir.Lhs], ir.Imm)
+            } else {
+                fmt.Printf("    add %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+            }
         case '-':
             fmt.Printf("    sub %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
         case '*':

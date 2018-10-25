@@ -27,6 +27,7 @@ try 26 'return 2 * 3 + 4 * 5;'
 try 8 'return 64 / 8;'
 try 21 '1+2; return 5+20-4;'
 try 6 'return 3 * 4 / 2;'
+try 77 '(3+4) * (5 + 6);'
 
 try 2 'a=2; return a;'
 try 10 'a=2; b=3+2; return a*b;'

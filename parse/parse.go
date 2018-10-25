@@ -38,9 +38,16 @@ func new_node(op int, lhs *Node, rhs *Node) *Node {
 }
 
 func term() *Node {
-    node := new(Node)
     t, _ := tokens.Data[pos].(*Token)
     pos++
+
+    if t.Ty == '(' {
+        var node *Node = assign()
+        expect(')')
+        return node
+    }
+
+    node := new(Node)
 
     if t.Ty == TK_NUM {
         node.Ty = ND_NUM

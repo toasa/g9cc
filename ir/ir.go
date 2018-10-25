@@ -23,6 +23,16 @@ func add(op int, lhs int, rhs int) *IR {
     return ir
 }
 
+func add_imm(op, lhs, imm int) *IR {
+    var ir *IR = new(IR)
+    ir.Op = op
+    ir.Lhs = lhs
+    ir.Has_imm = true
+    ir.Imm = imm
+    Vec_push(code, ir)
+    return ir
+}
+
 func gen_lval(node *Node) int {
     if node.Ty != ND_IDENT {
         Error("not an lvalue")
@@ -35,17 +45,13 @@ func gen_lval(node *Node) int {
         bpoff += 8
     }
 
-    var r1 int = regno
+    var r int = regno
     regno++
     off, _ := vars[node.Name].(int)
-    add(IR_MOV, r1, basereg)
 
-    var r2 int = regno
-    regno++
-    add(IR_IMM, r2, off)
-    add('+', r1, r2)
-    add(IR_KILL, r2, -1)
-    return r1
+    add(IR_MOV, r, basereg)
+    add_imm('+', r, off)
+    return r
 }
 
 func gen_expr(node *Node) int {

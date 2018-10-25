@@ -71,4 +71,6 @@ type IR struct {
     Op int
     Lhs int
     Rhs int
+    Has_imm bool
+    Imm int
 }
