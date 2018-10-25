@@ -16,7 +16,8 @@ func add_token(v *Vector, ty int, input string) *Token {
     return t
 }
 
-var keywords *Map
+// var keywords *Map
+var keywords map[string]interface{}
 
 func Scan(s string) *Vector {
     var v *Vector = New_vec()
@@ -33,28 +34,33 @@ func Scan(s string) *Vector {
         }
 
         // single-letter token
-        if strings.Contains("+-*/;", string(s[i_input])) {
+        if strings.Contains("+-*/;=", string(s[i_input])) {
             add_token(v, int(s[i_input]), string(s[i_input]))
             i_input++
             continue
         }
 
-        // keyword
+        // Identifier
         if isalpha(s[i_input]) || s[i_input] == '_' {
 
             len := 1
+            // identifierを切りだすための添字の取得
             for i := len + i_input; isalpha(s[i]) || isdigit(s[i]) || s[i] == '_'; {
                 len++
                 i = len + i_input
             }
             var name string = s[i_input:len + i_input]
 
-            ty, _ := Map_get(keywords, name).(int)
+            // name == "return"の場合 ty = TK_RETURN(257) となる
+            // nameがmap keywordsに登録されていない場合,識別子(identifier)とみなされる
+            ty, _ := keywords[name].(int)
+
             if ty == 0 {
-                Error(fmt.Sprintf("unknown identifier: %s", name))
+                ty = TK_IDENT
             }
 
-            add_token(v, ty, name)
+            t := add_token(v, ty, name)
+            t.Name = name
             i_input += len
             continue
         }
@@ -82,8 +88,12 @@ func Scan(s string) *Vector {
 }
 
 func Tokenize(s string) *Vector {
-    keywords = New_map()
-    Map_put(keywords, "return", TK_RETURN)
+    // keywords = New_map()
+    // Map_put(keywords, "return", TK_RETURN)
+
+    // 自作のmapではなく, Go付属のmapを使用
+    keywords = make(map[string]interface{})
+    keywords["return"] = TK_RETURN
 
     return Scan(s)
 }

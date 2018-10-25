@@ -50,8 +50,10 @@ func main() {
 
     // 標準入力からの文字列に終端文字を追加する. parseをかんたんにするため
     var tokens *Vector = token.Tokenize(os.Args[1] + "\000")
+    // PrintVector(tokens)
 
     var node *Node = parse.Parse(tokens)
+    // PrintAST(node)
 
     var irv *Vector = ir.Gen_ir(node)
 

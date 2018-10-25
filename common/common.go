@@ -19,6 +19,7 @@ type Map struct {
 
 const (
     TK_NUM = iota + 256 // Number Literal
+    TK_IDENT // Identifier
     TK_RETURN
     TK_EOF
 )
@@ -27,6 +28,7 @@ const (
 type Token struct {
     Ty int // token type
     Val int // number literal
+    Name string // identifier
     Input string // token string
 }
 
@@ -34,10 +36,11 @@ type Token struct {
 // parse.go
 
 const (
-    ND_NUM = iota + 256
-    ND_RETURN
-    ND_COMP_STMT
-    ND_EXPR_STMT
+    ND_NUM = iota + 256 // number literal
+    ND_IDENT // identifier
+    ND_RETURN // Return statement
+    ND_COMP_STMT // Compound statement
+    ND_EXPR_STMT // Expression statement
 )
 
 type Node struct {
@@ -45,8 +48,9 @@ type Node struct {
     Lhs *Node // left-hand side
     Rhs *Node // right-hand side
     Val int // number literal
-    Expr *Node
-    Stmts *Vector
+    Name string // Identifier
+    Expr *Node // "return" or Expression statement
+    Stmts *Vector // Compound statement
 }
 
 
@@ -56,6 +60,9 @@ const (
     IR_IMM = iota // immediate value
     IR_MOV
     IR_RETURN
+    IR_ALLOCA
+    IR_LOAD
+    IR_STORE
     IR_KILL
     IR_NOP
 )

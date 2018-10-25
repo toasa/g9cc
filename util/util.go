@@ -21,6 +21,14 @@ func Assert(b bool, msg string) {
     }
 }
 
+func Int2bool(n int) bool {
+    if n == 0 {
+        return false
+    } else {
+        return true
+    }
+}
+
 
 // Vector
 
@@ -61,8 +69,20 @@ func PrintVector(v *Vector) {
     }
 }
 
+// Node(未完)
+func PrintAST(node *Node) {
+
+    for i := 0; i < node.Stmts.Len; i++ {
+        n, _ := node.Stmts.Data[i].(*Node)
+        fmt.Printf("%+v\n", n)
+    }
+
+    fmt.Printf("=== END OF PRINT AST ===\n\n")
+}
+
 
 // Map
+// Goの標準機能のmapを使用しているため、以下の関数は不要
 
 func New_map() *Map {
     m := new(Map)
@@ -86,4 +106,13 @@ func Map_get(m *Map, key string) interface{} {
     }
 
     return nil
+}
+
+func Map_exists(m *Map, key string) bool {
+    for i := 0; i < m.Keys.Len; i++ {
+        if m.Keys.Data[i] == key {
+            return true
+        }
+    }
+    return false
 }

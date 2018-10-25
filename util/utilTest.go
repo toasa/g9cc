@@ -57,9 +57,20 @@ func Map_test() {
     Map_put(m, "foo", 6)
     i, _ = Map_get(m, "foo").(int)
     expect(line, 6, i)
+
+    expect(line, bool2int(true), bool2int(Map_exists(m, "foo")))
+    expect(line, bool2int(false), bool2int(Map_exists(m, "buz")))
 }
 
 func Util_test() {
-    // Vec_test()
+    Vec_test()
     Map_test()
+}
+
+func bool2int(b bool) int {
+    if b == true {
+        return 1
+    } else {
+        return 0
+    }
 }

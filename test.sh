@@ -12,7 +12,7 @@ try() {
     if [ "$actual" == "$expected" ]; then
         echo "$input => $actual"
     else
-        echo "$expected expected, but got $actual"
+        echo "$input: $expected expected, but got $actual"
         exit 1
     fi
 }
@@ -25,7 +25,10 @@ try 10 'return 2 * 3 + 4;'
 try 14 'return 2 + 3 * 4;'
 try 26 'return 2 * 3 + 4 * 5;'
 try 8 'return 64 / 8;'
-try 6 'return 3 * 4 / 2;'
 try 21 '1+2; return 5+20-4;'
+try 6 'return 3 * 4 / 2;'
+
+try 2 'a=2; return a;'
+try 10 'a=2; b=3+2; return a*b;'
 
 echo OK

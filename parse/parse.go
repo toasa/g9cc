@@ -18,6 +18,16 @@ func expect(ty int) {
     pos++
 }
 
+func consume(ty int) bool {
+    t, _ := tokens.Data[pos].(*Token)
+    if t.Ty != ty {
+        return false
+    } else {
+        pos++
+        return true
+    }
+}
+
 func new_node(op int, lhs *Node, rhs *Node) *Node {
     n := new(Node) // new()関数でNode型のポインタを返す
     n.Ty = op
@@ -27,25 +37,30 @@ func new_node(op int, lhs *Node, rhs *Node) *Node {
     return n
 }
 
-func number() *Node {
-    t, ok := tokens.Data[pos].(*Token)
-    if !ok {
-        Error("Not *Token type is in tokens.data[]")
-    }
-
-    if t.Ty != TK_NUM {
-        Error(fmt.Sprintf("number expected, but got %s", t.Input))
-    }
+func term() *Node {
+    node := new(Node)
+    t, _ := tokens.Data[pos].(*Token)
     pos++
 
-    node := new(Node)
-    node.Ty = ND_NUM
-    node.Val = t.Val
-    return node
+    if t.Ty == TK_NUM {
+        node.Ty = ND_NUM
+        node.Val = t.Val
+        return node
+    }
+
+    if t.Ty == TK_IDENT {
+        node.Ty = ND_IDENT
+        node.Name = t.Name
+        return node
+    }
+
+    Error(fmt.Sprintf("number expected, but got %s", t.Input))
+    err := new(Node)
+    return err
 }
 
 func mul() *Node {
-    var lhs *Node = number()
+    var lhs *Node = term()
 
     for true {
         t, ok := tokens.Data[pos].(*Token)
@@ -58,7 +73,7 @@ func mul() *Node {
             return lhs
         }
         pos++
-        lhs = new_node(op, lhs, number())
+        lhs = new_node(op, lhs, term())
     }
 
     // ここには通常到達しない
@@ -102,6 +117,14 @@ func expr() *Node {
     return err
 }
 
+func assign() *Node {
+    lhs := expr()
+    if consume('=') {
+        return new_node('=', lhs, expr())
+    }
+    return lhs
+}
+
 func stmt() *Node {
     // ASTのroot node
     node := new(Node)
@@ -120,10 +143,10 @@ func stmt() *Node {
         if t.Ty == TK_RETURN {
             pos++
             e.Ty = ND_RETURN
-            e.Expr = expr()
+            e.Expr = assign()
         } else {
             e.Ty = ND_EXPR_STMT
-            e.Expr = expr()
+            e.Expr = assign()
         }
 
         Vec_push(node.Stmts, e)
@@ -136,7 +159,6 @@ func stmt() *Node {
 
 func Parse(v *Vector) *Node {
     tokens = v
-    pos = 0
 
     return stmt()
 }

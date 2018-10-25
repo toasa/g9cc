@@ -8,6 +8,11 @@ import (
 )
 
 var code *Vector
+var regno int
+var basereg int
+
+var vars map[string]interface{}
+var bpoff int
 
 func add(op int, lhs int, rhs int) *IR {
     var ir *IR = new(IR)
@@ -18,7 +23,30 @@ func add(op int, lhs int, rhs int) *IR {
     return ir
 }
 
-var regno int
+func gen_lval(node *Node) int {
+    if node.Ty != ND_IDENT {
+        Error("not an lvalue")
+    }
+
+    _, ok := vars[node.Name]
+    // varsに識別子の登録がされていない場合、bp(ベースポインタ)のオフセットを8上げる
+    if !ok {
+        vars[node.Name] = bpoff
+        bpoff += 8
+    }
+
+    var r1 int = regno
+    regno++
+    off, _ := vars[node.Name].(int)
+    add(IR_MOV, r1, basereg)
+
+    var r2 int = regno
+    regno++
+    add(IR_IMM, r2, off)
+    add('+', r1, r2)
+    add(IR_KILL, r2, -1)
+    return r1
+}
 
 func gen_expr(node *Node) int {
 
@@ -29,6 +57,21 @@ func gen_expr(node *Node) int {
         return r;
     }
 
+    if node.Ty == ND_IDENT {
+        var r int = gen_lval(node)
+        add(IR_LOAD, r, r)
+        return r
+    }
+
+    if node.Ty == '=' {
+        var rhs int = gen_expr(node.Rhs)
+        var lhs int = gen_lval(node.Lhs)
+        add(IR_STORE, lhs, rhs)
+        add(IR_KILL, rhs, -1)
+        return lhs
+    }
+
+
     Assert((strings.Contains("+-*/", string(node.Ty))), "operator expected")
 
     // lhs, rhsどちらも数値が格納されている
@@ -36,7 +79,7 @@ func gen_expr(node *Node) int {
     var rhs int = gen_expr(node.Rhs)
 
     add(node.Ty, lhs, rhs)
-    add(IR_KILL, rhs, 0)
+    add(IR_KILL, rhs, -1)
 
     return lhs
 }
@@ -44,14 +87,14 @@ func gen_expr(node *Node) int {
 func gen_stmt(node *Node) {
     if node.Ty == ND_RETURN {
         r := gen_expr(node.Expr)
-        add(IR_RETURN, r, 0)
-        add(IR_KILL, r, 0)
+        add(IR_RETURN, r, -1)
+        add(IR_KILL, r, -1)
         return
     }
 
     if node.Ty == ND_EXPR_STMT {
         r := gen_expr(node.Expr)
-        add(IR_KILL, r, 0)
+        add(IR_KILL, r, -1)
         return
     }
 
@@ -74,8 +117,16 @@ func gen_stmt(node *Node) {
 // ここで決めたregisterのindexは確定ではなく, alloc_regs()で配列insを一つひとつ読みながら
 // 最終的なregister を決定する
 func Gen_ir(node *Node) *Vector{
-    Assert(node.Ty == ND_COMP_STMT, "Type of root node type is not ND_COMP_STMT")
+    Assert(node.Ty == ND_COMP_STMT, "Type of root node is not ND_COMP_STMT")
     code = New_vec()
+    regno = 1
+    basereg = 0
+    vars = make(map[string]interface{})
+    bpoff = 0
+
+    var alloca *IR = add(IR_ALLOCA, basereg, -1)
     gen_stmt(node)
+    alloca.Rhs = bpoff
+    add(IR_KILL, basereg, -1)
     return code
 }

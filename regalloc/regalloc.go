@@ -57,14 +57,12 @@ func Alloc_regs(irv *Vector) {
         }
 
         switch ir.Op {
-        case IR_IMM:
+        case IR_IMM, IR_ALLOCA, IR_RETURN:
             // 数値のとき格納先のレジスタのindexを調整する(->数値の値自体(rhs)はいじらない)
             ir.Lhs = alloc(ir.Lhs)
-        case IR_MOV, '+', '-', '*', '/':
+        case IR_MOV, IR_LOAD, IR_STORE, '+', '-', '*', '/':
             ir.Lhs = alloc(ir.Lhs)
             ir.Rhs = alloc(ir.Rhs)
-        case IR_RETURN:
-            ir.Lhs = alloc(ir.Lhs)
         case IR_KILL:
             // レジスタに格納された即値で、不要になったときに、そのレジスタを開放する操作
             kill(Reg_map[ir.Lhs])
