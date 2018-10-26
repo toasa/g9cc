@@ -20,8 +20,9 @@ type Map struct {
 const (
     TK_NUM = iota + 256 // Number Literal
     TK_IDENT // Identifier
-    TK_IF
-    TK_RETURN
+    TK_IF // "if"
+    TK_ELSE // "else"
+    TK_RETURN // "return"
     TK_EOF
 )
 
@@ -53,8 +54,10 @@ type Node struct {
     Name string // Identifier
     Expr *Node // "return" or Expression statement
     Stmts *Vector // Compound statement
+    // "if"
     Cond *Node // condtion in IF stmt
     Then *Node
+    Els *Node
 }
 
 
@@ -66,6 +69,7 @@ const (
     IR_MOV
     IR_RETURN
     IR_LABEL
+    IR_JMP
     IR_UNLESS
     IR_ALLOCA
     IR_LOAD

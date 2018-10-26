@@ -51,8 +51,7 @@ func Scan(s string) *Vector {
             }
             var name string = s[i_input:len + i_input]
 
-            // name == "return"の場合 ty = TK_RETURN(257) となる
-            // nameがmap keywordsに登録されていない場合,識別子(identifier)とみなされる
+            // nameがmap keywordsに登録されていない場合, 識別子(identifier)とみなされる
             ty, _ := keywords[name].(int)
 
             if ty == 0 {
@@ -93,6 +92,7 @@ func Tokenize(s string) *Vector {
     keywords = make(map[string]interface{})
     keywords["return"] = TK_RETURN
     keywords["if"] = TK_IF
+    keywords["else"] = TK_ELSE
 
     return Scan(s)
 }

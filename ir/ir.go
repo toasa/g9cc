@@ -17,6 +17,7 @@ var irinfo []IRInfo = []IRInfo{
     {IR_ADD_IMM, "ADD", IR_TY_REG_IMM},
     {IR_MOV, "MOV", IR_TY_REG_REG},
     {IR_LABEL, "", IR_TY_LABEL},
+    {IR_JMP, "JMP", IR_TY_LABEL},
     {IR_UNLESS, "UNLESS", IR_TY_REG_LABEL},
     {IR_RETURN, "RET", IR_TY_REG},
     {IR_ALLOCA, "ALLOCA", IR_TY_REG_IMM},
@@ -147,10 +148,24 @@ func gen_stmt(node *Node) {
         r := gen_expr(node.Cond)
         x := label
         label++
+
         add(IR_UNLESS, r, x)
         add(IR_KILL, r, -1)
+
         gen_stmt(node.Then)
+
+        if !(Node2bool(node.Els)) {
+            // else文がない場合
+            add(IR_LABEL, x, -1)
+            return
+        }
+
+        y := label
+        label++
+        add(IR_JMP, y, -1)
         add(IR_LABEL, x, -1)
+        gen_stmt(node.Els)
+        add(IR_LABEL, y, -1)
         return
     }
 

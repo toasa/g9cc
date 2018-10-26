@@ -141,7 +141,12 @@ func stmt() *Node {
         expect('(')
         node.Cond = assign()
         expect(')')
+
         node.Then = stmt()
+        
+        if consume(TK_ELSE) {
+            node.Els = stmt()
+        }
         return node
     case TK_RETURN:
         pos++

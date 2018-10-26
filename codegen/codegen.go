@@ -36,6 +36,8 @@ func Gen_x86(irv *Vector) {
             fmt.Printf("    jmp %s\n", ret)
         case IR_LABEL:
             fmt.Printf(".L%d:\n", ir.Lhs)
+        case IR_JMP:
+            fmt.Printf("    jmp .L%d\n", ir.Lhs)
         case IR_UNLESS:
             // 今の所, lhsの(レジスタの)値が0ならラベルに飛ぶ
             fmt.Printf("    cmp %s, 0\n", Regs[ir.Lhs])

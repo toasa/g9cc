@@ -29,6 +29,14 @@ func Int2bool(n int) bool {
     }
 }
 
+func Node2bool(n *Node) bool {
+    if n == nil {
+        return false
+    } else {
+        return true
+    }
+}
+
 
 // Vector
 
