@@ -111,8 +111,6 @@ func expr() *Node {
 
         op := t.Ty
         if !(op == '+' || op == '-') {
-            // 数値のみの式の場合この分岐となる。
-            // 通常の計算式の場合はここには到達しない
             return lhs
         }
         pos++
@@ -133,6 +131,36 @@ func assign() *Node {
 }
 
 func stmt() *Node {
+    node := new(Node)
+    t, _ := tokens.Data[pos].(*Token)
+
+    switch t.Ty {
+    case TK_IF:
+        pos++
+        node.Ty = ND_IF
+        expect('(')
+        node.Cond = assign()
+        expect(')')
+        node.Then = stmt()
+        return node
+    case TK_RETURN:
+        pos++
+        node.Ty = ND_RETURN
+        node.Expr = assign()
+        expect(';')
+        return node
+    default:
+        node.Ty = ND_EXPR_STMT
+        node.Expr = assign()
+        expect(';')
+        return node
+    }
+
+    err := new(Node)
+    return err
+}
+
+func compound_stmt() *Node {
     // ASTのroot node
     node := new(Node)
     node.Ty = ND_COMP_STMT
@@ -143,21 +171,7 @@ func stmt() *Node {
         if t.Ty == TK_EOF {
             return node
         }
-
-        // expression?
-        e := new(Node)
-
-        if t.Ty == TK_RETURN {
-            pos++
-            e.Ty = ND_RETURN
-            e.Expr = assign()
-        } else {
-            e.Ty = ND_EXPR_STMT
-            e.Expr = assign()
-        }
-
-        Vec_push(node.Stmts, e)
-        expect(';')
+        Vec_push(node.Stmts, stmt())
     }
 
     err := new(Node)
@@ -167,5 +181,5 @@ func stmt() *Node {
 func Parse(v *Vector) *Node {
     tokens = v
 
-    return stmt()
+    return compound_stmt()
 }

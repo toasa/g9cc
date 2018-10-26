@@ -20,6 +20,7 @@ type Map struct {
 const (
     TK_NUM = iota + 256 // Number Literal
     TK_IDENT // Identifier
+    TK_IF
     TK_RETURN
     TK_EOF
 )
@@ -38,7 +39,8 @@ type Token struct {
 const (
     ND_NUM = iota + 256 // number literal
     ND_IDENT // identifier
-    ND_RETURN // Return statement
+    ND_IF // "if"
+    ND_RETURN // "return"
     ND_COMP_STMT // Compound statement
     ND_EXPR_STMT // Expression statement
 )
@@ -51,15 +53,20 @@ type Node struct {
     Name string // Identifier
     Expr *Node // "return" or Expression statement
     Stmts *Vector // Compound statement
+    Cond *Node // condtion in IF stmt
+    Then *Node
 }
 
 
 // ir.go
 
 const (
-    IR_IMM = iota // immediate value
+    IR_IMM = 256 + iota // immediate value
+    IR_ADD_IMM
     IR_MOV
     IR_RETURN
+    IR_LABEL
+    IR_UNLESS
     IR_ALLOCA
     IR_LOAD
     IR_STORE
@@ -71,6 +78,19 @@ type IR struct {
     Op int
     Lhs int
     Rhs int
-    Has_imm bool
-    Imm int
+}
+
+const (
+    IR_TY_NOARG = iota
+    IR_TY_REG
+    IR_TY_LABEL
+    IR_TY_REG_REG
+    IR_TY_REG_IMM
+    IR_TY_REG_LABEL
+)
+
+type IRInfo struct {
+    Op int
+    Name string
+    Ty int
 }

@@ -7,6 +7,26 @@ import (
     "fmt"
 )
 
+var irinfo []IRInfo = []IRInfo{
+    // op, name, ty
+    {'+', "+", IR_TY_REG_REG},
+    {'-', "-", IR_TY_REG_REG},
+    {'*', "*", IR_TY_REG_REG},
+    {'/', "/", IR_TY_REG_REG},
+    {IR_IMM, "MOV", IR_TY_REG_IMM},
+    {IR_ADD_IMM, "ADD", IR_TY_REG_IMM},
+    {IR_MOV, "MOV", IR_TY_REG_REG},
+    {IR_LABEL, "", IR_TY_LABEL},
+    {IR_UNLESS, "UNLESS", IR_TY_REG_LABEL},
+    {IR_RETURN, "RET", IR_TY_REG},
+    {IR_ALLOCA, "ALLOCA", IR_TY_REG_IMM},
+    {IR_LOAD, "LOAD", IR_TY_REG_REG},
+    {IR_STORE, "STORE", IR_TY_REG_REG},
+    {IR_KILL, "KILL", IR_TY_REG},
+    {IR_NOP, "NOP", IR_TY_NOARG},
+    {0, "", 0},
+}
+
 var code *Vector
 var regno int
 var basereg int
@@ -14,21 +34,51 @@ var basereg int
 var vars map[string]interface{}
 var bpoff int
 
+var label int
+
+func Get_irinfo(ir *IR) *IRInfo {
+    for _, info := range irinfo {
+        if info.Op == ir.Op {
+            return &info
+        }
+    }
+    Error("invalid instruction")
+
+    err := new(IRInfo)
+    return err
+}
+
+func tostr(ir *IR) string {
+    info := Get_irinfo(ir)
+    switch info.Ty {
+    case IR_TY_LABEL:
+        return fmt.Sprintf(".L%d:", ir.Lhs)
+    case IR_TY_REG:
+        return fmt.Sprintf("%s r%d", info.Name, ir.Lhs)
+    case IR_TY_REG_REG:
+        return fmt.Sprintf("%s r%d, r%d", info.Name, ir.Lhs, ir.Rhs)
+    case IR_TY_REG_IMM:
+        return fmt.Sprintf("%s r%d, %d", info.Name, ir.Lhs, ir.Rhs)
+    case IR_TY_REG_LABEL:
+        return fmt.Sprintf("%s r%d, .L%d", info.Name, ir.Lhs, ir.Rhs)
+    default:
+        Assert(info.Ty == IR_TY_NOARG, "not IR_TY_NOARG")
+        return fmt.Sprintf("%s", info.Name)
+    }
+}
+
+func Dump_ir(irv *Vector) {
+    for i := 0; i < irv.Len; i++ {
+        ir, _ := irv.Data[i].(*IR)
+        fmt.Printf("%s\n", tostr(ir))
+    }
+}
+
 func add(op int, lhs int, rhs int) *IR {
     var ir *IR = new(IR)
     ir.Op = op
     ir.Lhs = lhs
     ir.Rhs = rhs
-    Vec_push(code, ir)
-    return ir
-}
-
-func add_imm(op, lhs, imm int) *IR {
-    var ir *IR = new(IR)
-    ir.Op = op
-    ir.Lhs = lhs
-    ir.Has_imm = true
-    ir.Imm = imm
     Vec_push(code, ir)
     return ir
 }
@@ -49,8 +99,10 @@ func gen_lval(node *Node) int {
     regno++
     off, _ := vars[node.Name].(int)
 
+    // r(現在の汎用レジスタ)にbaseregを代入する
     add(IR_MOV, r, basereg)
-    add_imm('+', r, off)
+    // r(現在の汎用レジスタ)に値offを加算する
+    add(IR_ADD_IMM, r, off)
     return r
 }
 
@@ -77,7 +129,6 @@ func gen_expr(node *Node) int {
         return lhs
     }
 
-
     Assert((strings.Contains("+-*/", string(node.Ty))), "operator expected")
 
     // lhs, rhsどちらも数値が格納されている
@@ -91,6 +142,18 @@ func gen_expr(node *Node) int {
 }
 
 func gen_stmt(node *Node) {
+
+    if node.Ty == ND_IF {
+        r := gen_expr(node.Cond)
+        x := label
+        label++
+        add(IR_UNLESS, r, x)
+        add(IR_KILL, r, -1)
+        gen_stmt(node.Then)
+        add(IR_LABEL, x, -1)
+        return
+    }
+
     if node.Ty == ND_RETURN {
         r := gen_expr(node.Expr)
         add(IR_RETURN, r, -1)
@@ -129,6 +192,7 @@ func Gen_ir(node *Node) *Vector{
     basereg = 0
     vars = make(map[string]interface{})
     bpoff = 0
+    label = 0
 
     var alloca *IR = add(IR_ALLOCA, basereg, -1)
     gen_stmt(node)

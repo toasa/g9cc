@@ -38,27 +38,48 @@ import (
 
 func main() {
 
-    if len(os.Args) != 2 {
-        fmt.Println("Usage: g9cc <code>")
-        return
-    }
-
     if os.Args[1] == "-test" {
         Util_test()
         return
     }
 
+    var input string
+    var dump_ir1 bool
+    var dump_ir2 bool
+
+    var argc int = len(os.Args)
+
+    if argc == 3 && (os.Args[1] == "-dump-ir1") {
+        dump_ir1 = true
+        input = os.Args[2]
+    } else if (argc == 3 && (os.Args[1] == "-dump-ir2")) {
+        dump_ir2 = true
+        input = os.Args[2]
+    } else {
+        if argc != 2 {
+            Error("Usage: g9cc [-test] [-dump_ir] <code>")
+        }
+        input = os.Args[1]
+    }
+
+
     // 標準入力からの文字列に終端文字を追加する. parseをかんたんにするため
-    var tokens *Vector = token.Tokenize(os.Args[1] + "\000")
+    var tokens *Vector = token.Tokenize(input + "\000")
     // PrintVector(tokens)
 
     var node *Node = parse.Parse(tokens)
     // PrintAST(node)
 
     var irv *Vector = ir.Gen_ir(node)
+    if dump_ir1 {
+        ir.Dump_ir(irv)
+    }
 
     // PrintVector(irv)
     regalloc.Alloc_regs(irv)
+    if dump_ir2 {
+        ir.Dump_ir(irv)
+    }
     // PrintVector(irv)
 
     fmt.Println("    .intel_syntax noprefix")

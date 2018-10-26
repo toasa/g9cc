@@ -3,7 +3,7 @@ package codegen
 import (
     . "g9cc/common"
     . "g9cc/util"
-    . "g9cc/regalloc"
+    . "g9cc/regs"
     "fmt"
 )
 
@@ -11,19 +11,10 @@ import (
 // irv.data[]内の各ir(中間表現)に対し、ir.opから機械的にアセンブリを生成していく
 
 var label_num int
-func gen_label() string {
-    var buf string
-    buf = fmt.Sprintf(".L%d", label_num)
-    //buf = fmt.Sprintf("Ltmp%d", label_num)
-    label_num++
-    return buf
-}
 
 func Gen_x86(irv *Vector) {
 
-    Regs = [8]string{"rdi", "rsi", "r10", "r11", "r12", "r13", "r14", "r15"}
-
-    var ret string = gen_label()
+    var ret string = ".Lend"
     fmt.Printf("    push rbp\n")
     fmt.Printf("    mov rbp, rsp\n")
 
@@ -36,11 +27,19 @@ func Gen_x86(irv *Vector) {
         switch ir.Op {
         case IR_IMM:
             fmt.Printf("    mov %s, %d\n", Regs[ir.Lhs], ir.Rhs)
+        case IR_ADD_IMM:
+            fmt.Printf("    add %s, %d\n", Regs[ir.Lhs], ir.Rhs)
         case IR_MOV:
             fmt.Printf("    mov %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
         case IR_RETURN: // lhsに格納された値をアキュムレータに渡し、戻り値とする
             fmt.Printf("    mov rax, %s\n", Regs[ir.Lhs])
             fmt.Printf("    jmp %s\n", ret)
+        case IR_LABEL:
+            fmt.Printf(".L%d:\n", ir.Lhs)
+        case IR_UNLESS:
+            // 今の所, lhsの(レジスタの)値が0ならラベルに飛ぶ
+            fmt.Printf("    cmp %s, 0\n", Regs[ir.Lhs])
+            fmt.Printf("    je .L%d\n", ir.Rhs)
         case IR_ALLOCA:
             if Int2bool(ir.Rhs) {
                 fmt.Printf("    sub rsp, %d\n", ir.Rhs)
@@ -51,12 +50,7 @@ func Gen_x86(irv *Vector) {
         case IR_STORE:
             fmt.Printf("    mov [%s], %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
         case '+':
-            //fmt.Printf("    add %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
-            if ir.Has_imm {
-                fmt.Printf("    add %s, %d\n", Regs[ir.Lhs], ir.Imm)
-            } else {
-                fmt.Printf("    add %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
-            }
+            fmt.Printf("    add %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
         case '-':
             fmt.Printf("    sub %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
         case '*':

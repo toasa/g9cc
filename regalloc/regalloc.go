@@ -3,11 +3,12 @@ package regalloc
 import (
     . "g9cc/common"
     . "g9cc/util"
+    . "g9cc/regs"
+    . "g9cc/ir"
 )
 
 // Register allocator
-var Regs [8]string
-var Used [len(Regs)]bool
+var Used []bool = make([]bool, Len_Regs)
 
 // IRの命令数分の要素をもつ配列(alloc_regs()で初期化)
 var Reg_map []int
@@ -23,7 +24,7 @@ func alloc(ir_reg int) int {
 
     // i はレジスタの配列regsのindex
     // 数値の場合こちらが走る
-    for i := 0; i < len(Regs); i++ {
+    for i := 0; i < Len_Regs; i++ {
         // index i のレジスタが使用済みの場合
         if Used[i] {
             continue
@@ -56,21 +57,20 @@ func Alloc_regs(irv *Vector) {
             Error("Not *IR type is in irv.data[]")
         }
 
-        switch ir.Op {
-        case IR_IMM, IR_ALLOCA, IR_RETURN:
-            // 数値のとき格納先のレジスタのindexを調整する(->数値の値自体(rhs)はいじらない)
+        // 各irに対し Get_irinfo()を呼び出し, irの種類(レジスタの使い方で類別)
+        var info *IRInfo = Get_irinfo(ir)
+
+        switch info.Ty {
+        case IR_TY_REG, IR_TY_REG_IMM, IR_TY_REG_LABEL:
             ir.Lhs = alloc(ir.Lhs)
-        case IR_MOV, IR_LOAD, IR_STORE, '+', '-', '*', '/':
+        case IR_TY_REG_REG:
             ir.Lhs = alloc(ir.Lhs)
-            if !ir.Has_imm {
-                ir.Rhs = alloc(ir.Rhs)
-            }
-        case IR_KILL:
-            // レジスタに格納された即値で、不要になったときに、そのレジスタを開放する操作
-            kill(Reg_map[ir.Lhs])
+            ir.Rhs = alloc(ir.Rhs)
+        }
+
+        if ir.Op == IR_KILL {
+            kill(ir.Lhs)
             ir.Op = IR_NOP
-        default:
-            Error("unknown operator")
         }
     }
 }

@@ -88,12 +88,11 @@ func Scan(s string) *Vector {
 }
 
 func Tokenize(s string) *Vector {
-    // keywords = New_map()
-    // Map_put(keywords, "return", TK_RETURN)
 
     // 自作のmapではなく, Go付属のmapを使用
     keywords = make(map[string]interface{})
     keywords["return"] = TK_RETURN
+    keywords["if"] = TK_IF
 
     return Scan(s)
 }

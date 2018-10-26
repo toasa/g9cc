@@ -31,5 +31,7 @@ try 77 '(3+4) * (5 + 6);'
 
 try 2 'a=2; return a;'
 try 10 'a=2; b=3+2; return a*b;'
+try 2 'if (1) return 2; return 3;'
+try 3 'if (0) return 2; return 3;'
 
 echo OK
