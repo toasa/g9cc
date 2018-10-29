@@ -5,6 +5,7 @@ import (
     . "g9cc/util"
     "strings"
     "fmt"
+    "os"
 )
 
 var irinfo []IRInfo = []IRInfo{
@@ -19,6 +20,7 @@ var irinfo []IRInfo = []IRInfo{
     {IR_LABEL, "", IR_TY_LABEL},
     {IR_JMP, "JMP", IR_TY_LABEL},
     {IR_UNLESS, "UNLESS", IR_TY_REG_LABEL},
+    {IR_CALL, "CALL", IR_TY_CALL},
     {IR_RETURN, "RET", IR_TY_REG},
     {IR_ALLOCA, "ALLOCA", IR_TY_REG_IMM},
     {IR_LOAD, "LOAD", IR_TY_REG_REG},
@@ -62,6 +64,14 @@ func tostr(ir *IR) string {
         return fmt.Sprintf("%s r%d, %d", info.Name, ir.Lhs, ir.Rhs)
     case IR_TY_REG_LABEL:
         return fmt.Sprintf("%s r%d, .L%d", info.Name, ir.Lhs, ir.Rhs)
+    case IR_TY_CALL:
+        var sb string
+        sb = fmt.Sprintf("r%d = %s(", ir.Lhs, ir.Name)
+        for i := 0; i < ir.Nargs; i++ {
+            sb += fmt.Sprintf(", r%d", ir.Args)
+        }
+        sb += ")"
+        return sb + "\000"
     default:
         Assert(info.Ty == IR_TY_NOARG, "not IR_TY_NOARG")
         return fmt.Sprintf("%s", info.Name)
@@ -70,8 +80,13 @@ func tostr(ir *IR) string {
 
 func Dump_ir(irv *Vector) {
     for i := 0; i < irv.Len; i++ {
-        ir, _ := irv.Data[i].(*IR)
-        fmt.Printf("%s\n", tostr(ir))
+        fn, _ := irv.Data[i].(*Function)
+
+        fmt.Fprintf(os.Stderr, "%s():\n", fn.Name);
+        for j := 0; j < fn.Ir.Len; j++ {
+            ir := fn.Ir.Data[j].(*IR)
+            fmt.Fprintf(os.Stderr, "  %s\n", tostr(ir))
+        }
     }
 }
 
@@ -119,6 +134,27 @@ func gen_expr(node *Node) int {
     if node.Ty == ND_IDENT {
         var r int = gen_lval(node)
         add(IR_LOAD, r, r)
+        return r
+    }
+
+    if node.Ty == ND_CALL {
+        var args [6]int
+        for i := 0; i < node.Args.Len; i++ {
+            arg, _ := node.Args.Data[i].(*Node)
+            args[i] = gen_expr(arg)
+        }
+
+        r := regno
+        regno++
+
+        var ir *IR = add(IR_CALL, r, -1)
+        ir.Name = node.Name
+        ir.Nargs = node.Args.Len
+        ir.Args = args
+
+        for i := 0; i < ir.Nargs; i++ {
+            add(IR_KILL, ir.Args[i], -1)
+        }
         return r
     }
 
@@ -200,18 +236,29 @@ func gen_stmt(node *Node) {
 // opが'+'or'-'の直後 => {IR_KILL, rhsの値が格納されたregisterのindex, 0}
 // ここで決めたregisterのindexは確定ではなく, alloc_regs()で配列insを一つひとつ読みながら
 // 最終的なregister を決定する
-func Gen_ir(node *Node) *Vector{
-    Assert(node.Ty == ND_COMP_STMT, "Type of root node is not ND_COMP_STMT")
-    code = New_vec()
-    regno = 1
-    basereg = 0
-    vars = make(map[string]interface{})
-    bpoff = 0
-    label = 0
+func Gen_ir(nodes *Vector) *Vector{
 
-    var alloca *IR = add(IR_ALLOCA, basereg, -1)
-    gen_stmt(node)
-    alloca.Rhs = bpoff
-    add(IR_KILL, basereg, -1)
-    return code
+    v := New_vec()
+    for i := 0; i < nodes.Len; i++ {
+        node := nodes.Data[i].(*Node)
+        Assert(node.Ty == ND_FUNC, "Type of root node is not ND_FUNC")
+
+        code = New_vec()
+        regno = 1
+        basereg = 0
+        vars = make(map[string]interface{})
+        bpoff = 0
+        label = 0
+
+        var alloca *IR = add(IR_ALLOCA, basereg, -1)
+        gen_stmt(node.Body)
+        alloca.Rhs = bpoff
+        add(IR_KILL, basereg, -1)
+
+        fn := new(Function)
+        fn.Name = node.Name
+        fn.Ir = code
+        Vec_push(v, fn)
+    }
+    return v
 }

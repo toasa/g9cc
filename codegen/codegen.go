@@ -10,19 +10,24 @@ import (
 // Code generator
 // irv.data[]内の各ir(中間表現)に対し、ir.opから機械的にアセンブリを生成していく
 
-var label_num int
+var label int
 
-func Gen_x86(irv *Vector) {
+func gen(fn *Function) {
 
-    var ret string = ".Lend"
+    var ret string = fmt.Sprintf(".Lend%d", label)
+    label++
+
+    fmt.Printf(".globl _%s\n", fn.Name)
+    fmt.Printf("_%s:\n", fn.Name)
+    fmt.Printf("    push r12\n")
+    fmt.Printf("    push r13\n")
+    fmt.Printf("    push r14\n")
+    fmt.Printf("    push r15\n")
     fmt.Printf("    push rbp\n")
     fmt.Printf("    mov rbp, rsp\n")
 
-    for i := 0; i < irv.Len; i++ {
-        ir, ok := irv.Data[i].(*IR)
-        if !ok {
-            Error("Not *IR type is in irv.data[]")
-        }
+    for i := 0; i < fn.Ir.Len; i++ {
+        ir := fn.Ir.Data[i].(*IR)
 
         switch ir.Op {
         case IR_IMM:
@@ -34,6 +39,23 @@ func Gen_x86(irv *Vector) {
         case IR_RETURN: // lhsに格納された値をアキュムレータに渡し、戻り値とする
             fmt.Printf("    mov rax, %s\n", Regs[ir.Lhs])
             fmt.Printf("    jmp %s\n", ret)
+        case IR_CALL:
+
+            var arg []string = []string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
+
+            for i := 0; i < ir.Nargs; i++ {
+                fmt.Printf("    mov %s, %s\n", arg[i], Regs[ir.Args[i]])
+            }
+
+            fmt.Printf("    push r10\n")
+            fmt.Printf("    push r11\n")
+            fmt.Printf("    mov rax, 0\n")
+            // 関数名の先頭に"_"が必要
+            fmt.Printf("    call _%s\n", ir.Name)
+            fmt.Printf("    pop r11\n")
+            fmt.Printf("    pop r10\n")
+
+            fmt.Printf("    mov %s, rax\n", Regs[ir.Lhs])
         case IR_LABEL:
             fmt.Printf(".L%d:\n", ir.Lhs)
         case IR_JMP:
@@ -78,7 +100,19 @@ func Gen_x86(irv *Vector) {
 
     fmt.Printf("%s:\n", ret)
     fmt.Printf("    mov rsp, rbp\n")
-    fmt.Printf("    mov rsp, rbp\n")
     fmt.Printf("    pop rbp\n")
+    fmt.Printf("    pop r15\n")
+    fmt.Printf("    pop r14\n")
+    fmt.Printf("    pop r13\n")
+    fmt.Printf("    pop r12\n")
     fmt.Printf("    ret\n")
+}
+
+func Gen_x86(fns *Vector) {
+    fmt.Printf(".intel_syntax noprefix\n")
+
+    for i := 0; i < fns.Len; i++ {
+        fn := fns.Data[i].(*Function)
+        gen(fn)
+    }
 }

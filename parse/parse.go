@@ -20,11 +20,11 @@ func expect(ty int) {
 
 func consume(ty int) bool {
     t, _ := tokens.Data[pos].(*Token)
-    if t.Ty != ty {
-        return false
-    } else {
+    if t.Ty == ty {
         pos++
         return true
+    } else {
+        return false
     }
 }
 
@@ -56,8 +56,26 @@ func term() *Node {
     }
 
     if t.Ty == TK_IDENT {
-        node.Ty = ND_IDENT
         node.Name = t.Name
+
+        if !consume('(') {
+            // 識別子
+            node.Ty = ND_IDENT
+            return node
+        }
+
+        // 関数呼び出し
+        node.Ty = ND_CALL
+        node.Args = New_vec()
+        if consume(')') {
+            return node
+        }
+
+        Vec_push(node.Args, assign())
+        for consume(',') {
+            Vec_push(node.Args, assign())
+        }
+        expect(')')
         return node
     }
 
@@ -143,7 +161,7 @@ func stmt() *Node {
         expect(')')
 
         node.Then = stmt()
-        
+
         if consume(TK_ELSE) {
             node.Els = stmt()
         }
@@ -171,20 +189,42 @@ func compound_stmt() *Node {
     node.Ty = ND_COMP_STMT
     node.Stmts = New_vec()
 
-    for true {
-        t, _ := tokens.Data[pos].(*Token)
-        if t.Ty == TK_EOF {
-            return node
-        }
+    for !consume('}') {
         Vec_push(node.Stmts, stmt())
     }
 
-    err := new(Node)
-    return err
+    return node
 }
 
-func Parse(v *Vector) *Node {
-    tokens = v
+func function() *Node {
+    node := new(Node)
+    node.Ty = ND_FUNC
+    node.Args = New_vec()
 
-    return compound_stmt()
+    t := tokens.Data[pos].(*Token)
+    if t.Ty != TK_IDENT {
+        Error(fmt.Sprintf("function name expected, but got %s", t.Input))
+    }
+    node.Name = t.Name
+    pos++
+
+    expect('(')
+    for !consume(')') {
+        Vec_push(node.Args, term())
+    }
+    expect('{')
+    node.Body = compound_stmt()
+    return node
+}
+
+func Parse(tokens_ *Vector) *Vector {
+    tokens = tokens_
+
+    pos = 0
+    v := New_vec()
+
+    for t := tokens.Data[pos].(*Token); t.Ty != TK_EOF; t = tokens.Data[pos].(*Token) {
+        Vec_push(v, function())
+    }
+    return v
 }

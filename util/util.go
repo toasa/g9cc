@@ -37,6 +37,14 @@ func Node2bool(n *Node) bool {
     }
 }
 
+func Format(fmts ...string) string {
+    var str string
+    for _, fmt := range fmts {
+        str += fmt + "\000"
+    }
+    return str
+}
+
 
 // Vector
 
@@ -68,26 +76,23 @@ func PrintVector(v *Vector) {
             fmt.Printf("%+v\n", v.Data[i])
         }
         fmt.Printf("=== END OF PRINT TOKEN ===\n\n")
-
+    case *Node:
+        for i := 0; i < v.Len; i++ {
+            fmt.Printf("%+v\n", v.Data[i])
+        }
+        fmt.Printf("=== END OF PRINT NODE ===\n\n")
     case *IR:
         for i := 0; i < v.Len; i++ {
             fmt.Printf("%+v\n", v.Data[i])
         }
         fmt.Printf("=== END OF PRINT IR ===\n\n")
+    case *Function:
+        for i := 0; i < v.Len; i++ {
+            fmt.Printf("%+v\n", v.Data[i])
+        }
+        fmt.Printf("=== END OF PRINT FUNCTION ===\n\n")
     }
 }
-
-// Node(未完)
-func PrintAST(node *Node) {
-
-    for i := 0; i < node.Stmts.Len; i++ {
-        n, _ := node.Stmts.Data[i].(*Node)
-        fmt.Printf("%+v\n", n)
-    }
-
-    fmt.Printf("=== END OF PRINT AST ===\n\n")
-}
-
 
 // Map
 // Goの標準機能のmapを使用しているため、以下の関数は不要
@@ -123,4 +128,35 @@ func Map_exists(m *Map, key string) bool {
         }
     }
     return false
+}
+
+
+// StringBuilder
+func New_sb() *StringBuilder {
+    sb := new(StringBuilder)
+    sb.Capacity = 8
+    sb.Len = 0
+    return sb
+}
+
+func Sb_grow(sb *StringBuilder, len int) {
+    if sb.Len + len <= sb.Capacity {
+        return
+    }
+
+    for sb.Len + len > sb.Capacity {
+        sb.Capacity *= 2
+    }
+}
+
+func Sb_append(sb *StringBuilder, s string) {
+    Sb_grow(sb, len(s))
+    sb.Data = s
+    sb.Len += len(s)
+}
+
+func Sb_get(sb *StringBuilder) string {
+    Sb_grow(sb, 1)
+    //sb.Data[sb.Len] = '\000'
+    return sb.Data
 }

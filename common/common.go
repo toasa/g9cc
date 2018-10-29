@@ -15,6 +15,12 @@ type Map struct {
     Vals *Vector
 }
 
+type StringBuilder struct {
+    Data string
+    Capacity int
+    Len int
+}
+
 // token.go
 
 const (
@@ -42,6 +48,8 @@ const (
     ND_IDENT // identifier
     ND_IF // "if"
     ND_RETURN // "return"
+    ND_CALL // Function call
+    ND_FUNC // Function definition
     ND_COMP_STMT // Compound statement
     ND_EXPR_STMT // Expression statement
 )
@@ -51,13 +59,21 @@ type Node struct {
     Lhs *Node // left-hand side
     Rhs *Node // right-hand side
     Val int // number literal
-    Name string // Identifier
     Expr *Node // "return" or Expression statement
     Stmts *Vector // Compound statement
+
+    Name string // Identifier
+
     // "if"
     Cond *Node // condtion in IF stmt
     Then *Node
     Els *Node
+
+    // Function definition
+    Body *Node
+
+    // Function call
+    Args *Vector
 }
 
 
@@ -68,6 +84,7 @@ const (
     IR_ADD_IMM
     IR_MOV
     IR_RETURN
+    IR_CALL
     IR_LABEL
     IR_JMP
     IR_UNLESS
@@ -82,6 +99,11 @@ type IR struct {
     Op int
     Lhs int
     Rhs int
+
+    // Function call
+    Name string
+    Nargs int
+    Args [6]int
 }
 
 const (
@@ -91,10 +113,17 @@ const (
     IR_TY_REG_REG
     IR_TY_REG_IMM
     IR_TY_REG_LABEL
+    IR_TY_CALL
 )
 
 type IRInfo struct {
     Op int
     Name string
     Ty int
+}
+
+type Function struct {
+    Name string
+    Args [6]int
+    Ir *Vector
 }

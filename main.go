@@ -25,7 +25,6 @@
 package main
 
 import (
-    "fmt"
     "os"
     . "g9cc/common"
     . "g9cc/util"
@@ -57,7 +56,7 @@ func main() {
         input = os.Args[2]
     } else {
         if argc != 2 {
-            Error("Usage: g9cc [-test] [-dump_ir] <code>")
+            Error("Usage: g9cc [-test] [-dump-ir1] [-dump-ir2] <code>")
         }
         input = os.Args[1]
     }
@@ -67,24 +66,21 @@ func main() {
     var tokens *Vector = token.Tokenize(input + "\000")
     // PrintVector(tokens)
 
-    var node *Node = parse.Parse(tokens)
-    // PrintAST(node)
+    var node *Vector = parse.Parse(tokens)
+    // PrintVector(node)
 
-    var irv *Vector = ir.Gen_ir(node)
+    var fns *Vector = ir.Gen_ir(node)
     if dump_ir1 {
-        ir.Dump_ir(irv)
+        ir.Dump_ir(fns)
     }
+    // PrintVector(fns)
 
-    // PrintVector(irv)
-    regalloc.Alloc_regs(irv)
+    regalloc.Alloc_regs(fns)
+
     if dump_ir2 {
-        ir.Dump_ir(irv)
+        ir.Dump_ir(fns)
     }
     // PrintVector(irv)
 
-    fmt.Println("    .intel_syntax noprefix")
-    fmt.Println("    .globl _main") // ここを".global main",
-    fmt.Println("_main:") // "main:"と書くと, ruiさんバージョンになる
-
-    codegen.Gen_x86(irv)
+    codegen.Gen_x86(fns)
 }
