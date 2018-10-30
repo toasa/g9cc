@@ -59,7 +59,8 @@ func term() *Node {
         node.Name = t.Name
 
         if !consume('(') {
-            // 識別子('('の場合関数呼び出しとみなされ、pos++となり、このif文の条件はfalseとなる)
+            // 識別子
+            // '('の場合関数呼び出しとみなされ、pos++となり、このif文の条件はfalseとなる
             node.Ty = ND_IDENT
             return node
         }
@@ -215,8 +216,13 @@ func function() *Node {
     pos++
 
     expect('(')
-    for !consume(')') {
+    if !consume(')') {
+        // 引数が存在した場合
         Vec_push(node.Args, term())
+        for consume(',') {
+            Vec_push(node.Args, term())
+        }
+        expect(')')
     }
     expect('{')
     node.Body = compound_stmt()

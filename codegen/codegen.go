@@ -47,6 +47,9 @@ import (
 
 var label int
 
+// 関数の引数の値を代入するためのレジスタ
+var argreg []string = []string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
+
 func gen(fn *Function) {
 
     var ret string = fmt.Sprintf(".Lend%d", label)
@@ -73,19 +76,16 @@ func gen(fn *Function) {
         switch ir.Op {
         case IR_IMM:
             fmt.Printf("    mov %s, %d\n", Regs[ir.Lhs], ir.Rhs)
-        case IR_ADD_IMM:
-            fmt.Printf("    add %s, %d\n", Regs[ir.Lhs], ir.Rhs)
+        case IR_SUB_IMM:
+            fmt.Printf("    sub %s, %d\n", Regs[ir.Lhs], ir.Rhs)
         case IR_MOV:
             fmt.Printf("    mov %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
         case IR_RETURN: // lhsに格納された値をアキュムレータに渡し、戻り値とする
             fmt.Printf("    mov rax, %s\n", Regs[ir.Lhs])
             fmt.Printf("    jmp %s\n", ret)
         case IR_CALL:
-
-            var arg []string = []string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
-
             for i := 0; i < ir.Nargs; i++ {
-                fmt.Printf("    mov %s, %s\n", arg[i], Regs[ir.Args[i]])
+                fmt.Printf("    mov %s, %s\n", argreg[i], Regs[ir.Args[i]])
             }
 
             fmt.Printf("    push r10\n")
@@ -110,6 +110,10 @@ func gen(fn *Function) {
             fmt.Printf("    mov %s, [%s]\n", Regs[ir.Lhs], Regs[ir.Rhs])
         case IR_STORE:
             fmt.Printf("    mov [%s], %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+        case IR_SAVE_ARGS:
+            for i := 0; i < ir.Lhs; i++ {
+                fmt.Printf("    mov [rbp-%d], %s\n", (i + 1) * 8, argreg[i])
+            }
         case '+':
             fmt.Printf("    add %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
         case '-':
@@ -119,6 +123,7 @@ func gen(fn *Function) {
             // mul reg: 予めrax(アキュムレータ)に格納された値と
             //          regに格納された値の掛け算を行い,結果をraxに格納する
             fmt.Printf("    mul %s\n", Regs[ir.Lhs])
+            // 掛け算の結果を汎用レジスタに格納する
             fmt.Printf("    mov %s, rax\n", Regs[ir.Lhs])
         case '/':
             // raxに左辺値を代入

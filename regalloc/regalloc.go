@@ -14,7 +14,6 @@ var used []bool
 // IRの命令数分の要素をもつ配列(alloc_regs()で初期化)
 var reg_map []int
 
-
 func alloc(ir_reg int) int {
 
     if reg_map[ir_reg] != -1 {

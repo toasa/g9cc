@@ -81,7 +81,7 @@ type Node struct {
 
 const (
     IR_IMM = 256 + iota // immediate value
-    IR_ADD_IMM
+    IR_SUB_IMM
     IR_MOV
     IR_RETURN
     IR_CALL
@@ -91,6 +91,7 @@ const (
     IR_LOAD
     IR_STORE
     IR_KILL
+    IR_SAVE_ARGS
     IR_NOP
 )
 
@@ -108,6 +109,7 @@ type IR struct {
 const (
     IR_TY_NOARG = iota
     IR_TY_REG
+    IR_TY_IMM
     IR_TY_LABEL
     IR_TY_REG_REG
     IR_TY_REG_IMM
@@ -123,7 +125,7 @@ type IRInfo struct {
 
 type Function struct {
     Name string
-    Args [6]int
+    // Args [6]int
     Stacksize int
     Ir *Vector
 }

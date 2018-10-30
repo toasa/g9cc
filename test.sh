@@ -22,8 +22,8 @@ try() {
 # 入力ファイル名を"-"とすると、標準入力と解釈され、-xcオプションでc言語のソースコードと明示
 # echo 'int plus(int x, int y) { return x + y; }' | gcc -dynamiclib -xc -o tmp-plus.dylib -
 
-echo 'int plus(int x, int y) { return x + y; }' | gcc -o tmp-plus.o -c -xc -
-ar rcs libstatic.a tmp-plus.o
+#echo 'int plus(int x, int y) { return x + y; }' | gcc -o tmp-plus.o -c -xc -
+#ar rcs libstatic.a tmp-plus.o
 
 try 1 'main() { return 1; }'
 try 10 'main() { return 2*3+4; }'
@@ -40,6 +40,9 @@ try 2 'main() { if (1) return 2; else return 3; }'
 try 3 'main() { if (0) return 2; else return 3; }'
 try 1 'one() { return 1; } main() { return one(); }'
 try 3 'one() { return 1; } two() { return 2; } main() { return one() + two(); }'
-# try 5 'main() { return plus(2, 3); }'
+try 5 'plus(x, y) { return x + y; } main() { return plus(2, 3); }'
+try 6 'mul(a, b) { return a * b; } main() { return mul(2, 3); }'
+try 21 'add(a,b,c,d,e,f) { return a+b+c+d+e+f; } main() { return add(1,2,3,4,5,6); }'
+
 
 echo OK

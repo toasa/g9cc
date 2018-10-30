@@ -9,7 +9,7 @@ import (
 )
 
 // Compile AST to intermediate code that has infinite number of registers.
-// Base pointer is always assigned to r0.
+// Base pointer is always assigned to r0(notation of -dump-ir).
 
 var irinfo []IRInfo = []IRInfo{
     // op, name, ty
@@ -18,7 +18,7 @@ var irinfo []IRInfo = []IRInfo{
     {'*', "MUL", IR_TY_REG_REG},
     {'/', "DIV", IR_TY_REG_REG},
     {IR_IMM, "MOV", IR_TY_REG_IMM},
-    {IR_ADD_IMM, "ADD", IR_TY_REG_IMM},
+    {IR_SUB_IMM, "SUB", IR_TY_REG_IMM},
     {IR_MOV, "MOV", IR_TY_REG_REG},
     {IR_LABEL, "", IR_TY_LABEL},
     {IR_JMP, "JMP", IR_TY_LABEL},
@@ -28,17 +28,18 @@ var irinfo []IRInfo = []IRInfo{
     {IR_LOAD, "LOAD", IR_TY_REG_REG},
     {IR_STORE, "STORE", IR_TY_REG_REG},
     {IR_KILL, "KILL", IR_TY_REG},
+    {IR_SAVE_ARGS, "SAVE_ARGS", IR_TY_IMM},
     {IR_NOP, "NOP", IR_TY_NOARG},
     {0, "", 0},
 }
 
 var code *Vector
 
-// var basereg int
-
+// 各識別子のrbpからのoffsetを登録するための辞書
 var vars map[string]interface{}
+// 汎用レジスタの番号
 var regno int
-// var bpoff int
+
 var stacksize int
 
 var label int
@@ -62,6 +63,8 @@ func tostr(ir *IR) string {
     switch info.Ty {
     case IR_TY_LABEL:
         return fmt.Sprintf(".L%d:", ir.Lhs)
+    case IR_TY_IMM:
+        return fmt.Sprintf("%s %d", info.Name, ir.Lhs)
     case IR_TY_REG:
         return fmt.Sprintf("%s r%d", info.Name, ir.Lhs)
     case IR_TY_REG_REG:
@@ -115,6 +118,8 @@ func gen_lval(node *Node) int {
 
     if !ok {
         // varsに識別子の登録がされていない場合
+        // 識別子をメモリ上へstoreしたり、メモリからloadする時、
+        // base pointerからの距離を, map varsに格納しておく。
         stacksize += 8
         vars[node.Name] = stacksize
     }
@@ -123,9 +128,11 @@ func gen_lval(node *Node) int {
     regno++
     off, _ := vars[node.Name].(int)
 
+    // r(現在の汎用レジスタ)にrbpを代入する
     add(IR_MOV, r, 0)
-    // r(現在の汎用レジスタ)に値offを加算する
-    add(IR_ADD_IMM, r, -off)
+    // r(現在はrbpの値)からoffset(メモリ上にある識別子が, [rbp]からどれほど離れているか)
+    // だけ減算する
+    add(IR_SUB_IMM, r, off)
     return r
 }
 
@@ -168,6 +175,7 @@ func gen_expr(node *Node) int {
 
     if node.Ty == '=' {
         var rhs int = gen_expr(node.Rhs)
+        // lhsはメモリへstoreするためのアドレスが格納されたレジスタ(の番号)が入っている
         var lhs int = gen_lval(node.Lhs)
         add(IR_STORE, lhs, rhs)
         add(IR_KILL, rhs, -1)
@@ -238,13 +246,25 @@ func gen_stmt(node *Node) {
     Error(fmt.Sprintf("unknown node: %d", node.Ty))
 }
 
-// ASTを引数にとり、中間表現を返す
-// irは {op: , lhs: , rhs : }からなる
-// op = numのとき => {IR_IMM, register_index, num_value}
-// op = '+'のとき => {'+', lhsの値が格納されたregisterのindex, rhsの値が格納されたregisterのindex}
-// opが'+'or'-'の直後 => {IR_KILL, rhsの値が格納されたregisterのindex, 0}
-// ここで決めたregisterのindexは確定ではなく, alloc_regs()で配列insを一つひとつ読みながら
-// 最終的なregister を決定する
+func gen_args(nodes *Vector) {
+    if nodes.Len == 0 {
+        return
+    }
+
+    add(IR_SAVE_ARGS, nodes.Len, -1)
+
+    // varsに各識別子のoffsetを登録する処理
+    for i := 0; i < nodes.Len; i++ {
+        node := nodes.Data[i].(*Node)
+        if node.Ty != ND_IDENT {
+            Error("bad parameter")
+        }
+
+        stacksize += 8
+        vars[node.Name] = stacksize
+    }
+}
+
 func Gen_ir(nodes *Vector) *Vector{
 
     v := New_vec()
@@ -269,9 +289,12 @@ func Gen_ir(nodes *Vector) *Vector{
         // fn.Irに使用
         code = New_vec()
         vars = make(map[string]interface{})
+        // 各関数ごとにregsiter numとstacksizeを初期化している.
+        // regnoが1からはじまるのは、レジスタの配列Regsの0番目にrbpがあるから.
         regno = 1
-        stacksize = 8
+        stacksize = 0
 
+        gen_args(node.Args)
         gen_stmt(node.Body)
 
         fn := new(Function)
