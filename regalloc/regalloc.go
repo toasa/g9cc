@@ -17,10 +17,6 @@ var Reg_map []int
 
 func alloc(ir_reg int) int {
 
-    // fmt.Println("ir_reg: ", ir_reg)
-    // fmt.Println("used: ", Used)
-    // fmt.Println("reg_map: ", Reg_map, "\n")
-
     if Reg_map[ir_reg] != -1 {
         var r int = Reg_map[ir_reg]
         Assert(Used[r], "allocation error")
@@ -76,7 +72,7 @@ func visit(irv *Vector) {
     }
 }
 
-// 中間表現の命令配列insの各要素に対し、必要ならレジスタを割り当てていく
+// 中間表現の命令配列fnsの各要素に対し、必要ならレジスタを割り当てていく
 func Alloc_regs(fns *Vector) {
     for i := 0; i < fns.Len; i++ {
         fn := fns.Data[i].(*Function)

@@ -10,6 +10,34 @@ import (
 // Code generator
 // irv.data[]内の各ir(中間表現)に対し、ir.opから機械的にアセンブリを生成していく
 
+// x64 calling convention(cc)
+// 整数・ポインタ引数: rdi, rsi, rdx, rcx, r8, r9
+// 戻り値: rax
+// システムコール: rcx
+// レジスタのみでは引数の数が不足する場合、スタックを使用
+
+// x86 calling convention
+// 関数呼び出す側のcc
+// ・関数の引数は右側からpushする
+// ・call func
+// ・引数の数×4、espを増やす
+// ・関数の戻り値はraxにいれる
+//
+// ex.
+// int func(int a, int b);
+// のとき
+// push b
+// push a
+// call func
+// add esp 3×4
+
+// 関数を呼び出される側のcc
+// ・帰り値はeaxに代入する
+// ・汎用レジスタの内、ebx, esi, edi, ebp, espの値は関数呼び出し時の値に戻す
+//      →(ecx, edxの値を保存する必要はない)
+// ・ret命令で関数呼び出しから戻る
+//      この時引数は、esp+(左から引数が何番目にあるか)
+
 var label int
 
 func gen(fn *Function) {
@@ -23,6 +51,9 @@ func gen(fn *Function) {
     fmt.Printf("    push r13\n")
     fmt.Printf("    push r14\n")
     fmt.Printf("    push r15\n")
+    // 関数呼び出しの先頭で以下の２行を行う
+    // 呼び出し元のrbpをスタックにpushする。そしてrbpにrspを代入する(呼び出し先の関数の基点となるアドレスを作る)
+    // rbp: 関数内においてスタック領域を扱う処理の基準となるメモリアドレス
     fmt.Printf("    push rbp\n")
     fmt.Printf("    mov rbp, rsp\n")
 
@@ -51,6 +82,7 @@ func gen(fn *Function) {
             fmt.Printf("    push r11\n")
             fmt.Printf("    mov rax, 0\n")
             // 関数名の先頭に"_"が必要
+            // callの次のアドレスをスタックに積んで、ラベル_%sを実行する
             fmt.Printf("    call _%s\n", ir.Name)
             fmt.Printf("    pop r11\n")
             fmt.Printf("    pop r10\n")
@@ -99,6 +131,10 @@ func gen(fn *Function) {
     }
 
     fmt.Printf("%s:\n", ret)
+    // 関数の最後で以下の処理を行う
+    // rspにrbpを代入する(ローカル変数の確保などで、rspを更新した場合rbpに戻すための処理)
+    // rbpには関数呼び出し直後のスタックトップのアドレスが格納されていたので、そこまでrspを戻すことができる
+    // popしてrbpを呼び、関数呼び出しもとでの値へrbpをもどす
     fmt.Printf("    mov rsp, rbp\n")
     fmt.Printf("    pop rbp\n")
     fmt.Printf("    pop r15\n")

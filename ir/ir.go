@@ -39,6 +39,8 @@ var bpoff int
 
 var label int
 
+// regalloc.go内のvisit()関数で呼び出される
+// 各中間表現irに対し、IR.Opから、対応するIRInfoを返す
 func Get_irinfo(ir *IR) *IRInfo {
     for _, info := range irinfo {
         if info.Op == ir.Op {
@@ -99,6 +101,7 @@ func add(op int, lhs int, rhs int) *IR {
     return ir
 }
 
+// 左辺値には識別子がくる
 func gen_lval(node *Node) int {
     if node.Ty != ND_IDENT {
         Error("not an lvalue")
@@ -140,6 +143,7 @@ func gen_expr(node *Node) int {
     if node.Ty == ND_CALL {
         var args [6]int
         for i := 0; i < node.Args.Len; i++ {
+            // 関数に引数がある場合
             arg, _ := node.Args.Data[i].(*Node)
             args[i] = gen_expr(arg)
         }
@@ -185,6 +189,7 @@ func gen_stmt(node *Node) {
         x := label
         label++
 
+        // jmp命令での飛び先のラベルxをRhsに格納する
         add(IR_UNLESS, r, x)
         add(IR_KILL, r, -1)
 
@@ -239,10 +244,25 @@ func gen_stmt(node *Node) {
 func Gen_ir(nodes *Vector) *Vector{
 
     v := New_vec()
+
+    // ===変数名(型)===
+    // v(*Vector)
+    // | - Data([]*Function)-
+    // |                    | - Name(string)
+    // |                    | - Args([6]int)
+    // |                    | - Ir(*Vector) -
+    // |                                    | - code(*Vector)-
+    // |                                                     | - Data([]*IR): ここに関数の中身の
+    // |                                                                      中間表現が格納される
+    // |
+    // |
+
+
     for i := 0; i < nodes.Len; i++ {
         node := nodes.Data[i].(*Node)
         Assert(node.Ty == ND_FUNC, "Type of root node is not ND_FUNC")
 
+        // fn.Irに使用
         code = New_vec()
         regno = 1
         basereg = 0

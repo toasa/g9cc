@@ -59,7 +59,7 @@ func term() *Node {
         node.Name = t.Name
 
         if !consume('(') {
-            // 識別子
+            // 識別子('('の場合関数呼び出しとみなされ、pos++となり、このif文の条件はfalseとなる)
             node.Ty = ND_IDENT
             return node
         }
@@ -68,9 +68,11 @@ func term() *Node {
         node.Ty = ND_CALL
         node.Args = New_vec()
         if consume(')') {
+            // 関数に引数がない場合
             return node
         }
 
+        // 引数がある場合
         Vec_push(node.Args, assign())
         for consume(',') {
             Vec_push(node.Args, assign())
@@ -143,8 +145,10 @@ func expr() *Node {
 func assign() *Node {
     lhs := expr()
     if consume('=') {
+        // =文の場合
         return new_node('=', lhs, expr())
     }
+    // =文でない場合
     return lhs
 }
 
@@ -190,6 +194,8 @@ func compound_stmt() *Node {
     node.Stmts = New_vec()
 
     for !consume('}') {
+        // 関数の終わり"}"まで
+        // 一文(;で終わる文)づつparseし、node.Stmtsにpushする
         Vec_push(node.Stmts, stmt())
     }
 
