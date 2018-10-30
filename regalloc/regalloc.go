@@ -9,29 +9,29 @@ import (
 )
 
 // Register allocator
-var Used []bool
+var used []bool
 
 // IRの命令数分の要素をもつ配列(alloc_regs()で初期化)
-var Reg_map []int
+var reg_map []int
 
 
 func alloc(ir_reg int) int {
 
-    if Reg_map[ir_reg] != -1 {
-        var r int = Reg_map[ir_reg]
-        Assert(Used[r], "allocation error")
+    if reg_map[ir_reg] != -1 {
+        var r int = reg_map[ir_reg]
+        Assert(used[r], "allocation error")
         return r
     }
 
     // i はレジスタの配列regsのindex
     for i := 0; i < Len_Regs; i++ {
         // index i のレジスタが使用済みの場合
-        if Used[i] {
+        if used[i] {
             continue
         }
         // index i のレジスタが未使用の場合
-        Used[i] = true
-        Reg_map[ir_reg] = i // registerへのmapping
+        reg_map[ir_reg] = i // registerへのmapping
+        used[i] = true
         return i
     }
 
@@ -40,11 +40,13 @@ func alloc(ir_reg int) int {
 }
 
 func kill(r int) {
-    Assert(Used[r], "kill error")
-    Used[r] = false
+    Assert(used[r], "kill error")
+    used[r] = false
 }
 
 func visit(irv *Vector) {
+    reg_map[0] = 0
+    used[0] = true
 
     for i := 0; i < irv.Len; i++ {
         ir := irv.Data[i].(*IR)
@@ -77,12 +79,12 @@ func Alloc_regs(fns *Vector) {
     for i := 0; i < fns.Len; i++ {
         fn := fns.Data[i].(*Function)
 
-        Reg_map = make([]int, fn.Ir.Len)
+        reg_map = make([]int, fn.Ir.Len)
         for j := 0; j < fn.Ir.Len; j++ {
-            Reg_map[j] = -1
+            reg_map[j] = -1
         }
 
-        Used = make([]bool, Len_Regs)
+        used = make([]bool, Len_Regs)
 
         visit(fn.Ir)
     }

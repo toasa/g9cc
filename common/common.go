@@ -88,7 +88,6 @@ const (
     IR_LABEL
     IR_JMP
     IR_UNLESS
-    IR_ALLOCA
     IR_LOAD
     IR_STORE
     IR_KILL
@@ -125,5 +124,6 @@ type IRInfo struct {
 type Function struct {
     Name string
     Args [6]int
+    Stacksize int
     Ir *Vector
 }

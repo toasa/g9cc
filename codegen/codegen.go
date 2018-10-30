@@ -10,6 +10,13 @@ import (
 // Code generator
 // irv.data[]内の各ir(中間表現)に対し、ir.opから機械的にアセンブリを生成していく
 
+// cdecl(C Declaration)
+// ・関数の引数は右から左の順にスタックに積まれる
+// ・呼び出された側の関数ではeax, ecx, edxのレジスタのもとの値を保存することなく使用して良い
+//      → 呼び出し側の関数では(必要なら)呼び出す前にそれらのレジスタをスタック上に保持する
+// ・スタックポインタの処理は呼び出し側で行う
+// ・スタック上の引数データの削除は呼び出し側で行う
+
 // x64 calling convention(cc)
 // 整数・ポインタ引数: rdi, rsi, rdx, rcx, r8, r9
 // 戻り値: rax
@@ -47,15 +54,18 @@ func gen(fn *Function) {
 
     fmt.Printf(".globl _%s\n", fn.Name)
     fmt.Printf("_%s:\n", fn.Name)
-    fmt.Printf("    push r12\n")
-    fmt.Printf("    push r13\n")
-    fmt.Printf("    push r14\n")
-    fmt.Printf("    push r15\n")
+
     // 関数呼び出しの先頭で以下の２行を行う
     // 呼び出し元のrbpをスタックにpushする。そしてrbpにrspを代入する(呼び出し先の関数の基点となるアドレスを作る)
     // rbp: 関数内においてスタック領域を扱う処理の基準となるメモリアドレス
     fmt.Printf("    push rbp\n")
     fmt.Printf("    mov rbp, rsp\n")
+
+    fmt.Printf("    sub rsp, %d\n", fn.Stacksize)
+    fmt.Printf("    push r12\n")
+    fmt.Printf("    push r13\n")
+    fmt.Printf("    push r14\n")
+    fmt.Printf("    push r15\n")
 
     for i := 0; i < fn.Ir.Len; i++ {
         ir := fn.Ir.Data[i].(*IR)
@@ -96,11 +106,6 @@ func gen(fn *Function) {
             // 今の所, lhsの(レジスタの)値が0ならラベルに飛ぶ
             fmt.Printf("    cmp %s, 0\n", Regs[ir.Lhs])
             fmt.Printf("    je .L%d\n", ir.Rhs)
-        case IR_ALLOCA:
-            if Int2bool(ir.Rhs) {
-                fmt.Printf("    sub rsp, %d\n", ir.Rhs)
-            }
-            fmt.Printf("    mov %s, rsp\n", Regs[ir.Lhs])
         case IR_LOAD:
             fmt.Printf("    mov %s, [%s]\n", Regs[ir.Lhs], Regs[ir.Rhs])
         case IR_STORE:
@@ -135,12 +140,12 @@ func gen(fn *Function) {
     // rspにrbpを代入する(ローカル変数の確保などで、rspを更新した場合rbpに戻すための処理)
     // rbpには関数呼び出し直後のスタックトップのアドレスが格納されていたので、そこまでrspを戻すことができる
     // popしてrbpを呼び、関数呼び出しもとでの値へrbpをもどす
-    fmt.Printf("    mov rsp, rbp\n")
-    fmt.Printf("    pop rbp\n")
     fmt.Printf("    pop r15\n")
     fmt.Printf("    pop r14\n")
     fmt.Printf("    pop r13\n")
     fmt.Printf("    pop r12\n")
+    fmt.Printf("    mov rsp, rbp\n")
+    fmt.Printf("    pop rbp\n")
     fmt.Printf("    ret\n")
 }
 

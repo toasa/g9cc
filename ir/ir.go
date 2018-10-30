@@ -8,12 +8,15 @@ import (
     "os"
 )
 
+// Compile AST to intermediate code that has infinite number of registers.
+// Base pointer is always assigned to r0.
+
 var irinfo []IRInfo = []IRInfo{
     // op, name, ty
-    {'+', "+", IR_TY_REG_REG},
-    {'-', "-", IR_TY_REG_REG},
-    {'*', "*", IR_TY_REG_REG},
-    {'/', "/", IR_TY_REG_REG},
+    {'+', "ADD", IR_TY_REG_REG},
+    {'-', "SUB", IR_TY_REG_REG},
+    {'*', "MUL", IR_TY_REG_REG},
+    {'/', "DIV", IR_TY_REG_REG},
     {IR_IMM, "MOV", IR_TY_REG_IMM},
     {IR_ADD_IMM, "ADD", IR_TY_REG_IMM},
     {IR_MOV, "MOV", IR_TY_REG_REG},
@@ -22,7 +25,6 @@ var irinfo []IRInfo = []IRInfo{
     {IR_UNLESS, "UNLESS", IR_TY_REG_LABEL},
     {IR_CALL, "CALL", IR_TY_CALL},
     {IR_RETURN, "RET", IR_TY_REG},
-    {IR_ALLOCA, "ALLOCA", IR_TY_REG_IMM},
     {IR_LOAD, "LOAD", IR_TY_REG_REG},
     {IR_STORE, "STORE", IR_TY_REG_REG},
     {IR_KILL, "KILL", IR_TY_REG},
@@ -31,11 +33,13 @@ var irinfo []IRInfo = []IRInfo{
 }
 
 var code *Vector
-var regno int
-var basereg int
+
+// var basereg int
 
 var vars map[string]interface{}
-var bpoff int
+var regno int
+// var bpoff int
+var stacksize int
 
 var label int
 
@@ -108,20 +112,20 @@ func gen_lval(node *Node) int {
     }
 
     _, ok := vars[node.Name]
-    // varsに識別子の登録がされていない場合、bp(ベースポインタ)のオフセットを8上げる
+
     if !ok {
-        vars[node.Name] = bpoff
-        bpoff += 8
+        // varsに識別子の登録がされていない場合
+        stacksize += 8
+        vars[node.Name] = stacksize
     }
 
     var r int = regno
     regno++
     off, _ := vars[node.Name].(int)
 
-    // r(現在の汎用レジスタ)にbaseregを代入する
-    add(IR_MOV, r, basereg)
+    add(IR_MOV, r, 0)
     // r(現在の汎用レジスタ)に値offを加算する
-    add(IR_ADD_IMM, r, off)
+    add(IR_ADD_IMM, r, -off)
     return r
 }
 
@@ -264,19 +268,15 @@ func Gen_ir(nodes *Vector) *Vector{
 
         // fn.Irに使用
         code = New_vec()
-        regno = 1
-        basereg = 0
         vars = make(map[string]interface{})
-        bpoff = 0
-        label = 0
+        regno = 1
+        stacksize = 8
 
-        var alloca *IR = add(IR_ALLOCA, basereg, -1)
         gen_stmt(node.Body)
-        alloca.Rhs = bpoff
-        add(IR_KILL, basereg, -1)
 
         fn := new(Function)
         fn.Name = node.Name
+        fn.Stacksize = stacksize
         fn.Ir = code
         Vec_push(v, fn)
     }
