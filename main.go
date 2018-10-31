@@ -30,9 +30,9 @@ import (
     . "g9cc/util"
     "g9cc/token"
     "g9cc/parse"
-    "g9cc/ir"
+    "g9cc/gen_ir"
     "g9cc/regalloc"
-    "g9cc/codegen"
+    "g9cc/gen_x86"
 )
 
 func main() {

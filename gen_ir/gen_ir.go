@@ -11,26 +11,26 @@ import (
 // Compile AST to intermediate code that has infinite number of registers.
 // Base pointer is always assigned to r0(notation of -dump-ir).
 
-var irinfo []IRInfo = []IRInfo{
-    // op, name, ty
-    {IR_ADD, "ADD", IR_TY_REG_REG},
-    {IR_SUB, "SUB", IR_TY_REG_REG},
-    {IR_MUL, "MUL", IR_TY_REG_REG},
-    {IR_DIV, "DIV", IR_TY_REG_REG},
-    {IR_IMM, "MOV", IR_TY_REG_IMM},
-    {IR_SUB_IMM, "SUB", IR_TY_REG_IMM},
-    {IR_MOV, "MOV", IR_TY_REG_REG},
-    {IR_LABEL, "", IR_TY_LABEL},
-    {IR_JMP, "JMP", IR_TY_LABEL},
-    {IR_UNLESS, "UNLESS", IR_TY_REG_LABEL},
-    {IR_CALL, "CALL", IR_TY_CALL},
-    {IR_RETURN, "RET", IR_TY_REG},
-    {IR_LOAD, "LOAD", IR_TY_REG_REG},
-    {IR_STORE, "STORE", IR_TY_REG_REG},
-    {IR_KILL, "KILL", IR_TY_REG},
-    {IR_SAVE_ARGS, "SAVE_ARGS", IR_TY_IMM},
-    {IR_NOP, "NOP", IR_TY_NOARG},
-    {0, "", 0},
+// 中の要素の順序はcommon.go内のirのconstと一致させる
+var Irinfo_arr []IRInfo = []IRInfo{
+    // name, ty
+    {"ADD", IR_TY_REG_REG},
+    {"SUB", IR_TY_REG_REG},
+    {"MUL", IR_TY_REG_REG},
+    {"DIV", IR_TY_REG_REG},
+    {"MOV", IR_TY_REG_IMM},
+    {"SUB", IR_TY_REG_IMM},
+    {"MOV", IR_TY_REG_REG},
+    {"RET", IR_TY_REG},
+    {"CALL", IR_TY_CALL},
+    {"", IR_TY_LABEL},
+    {"JMP", IR_TY_LABEL},
+    {"UNLESS", IR_TY_REG_LABEL},
+    {"LOAD", IR_TY_REG_REG},
+    {"STORE", IR_TY_REG_REG},
+    {"KILL", IR_TY_REG},
+    {"SAVE_ARGS", IR_TY_IMM},
+    {"NOP", IR_TY_NOARG},
 }
 
 var code *Vector
@@ -44,22 +44,8 @@ var stacksize int
 
 var label int
 
-// regalloc.go内のvisit()関数で呼び出される
-// 各中間表現irに対し、IR.Opから、対応するIRInfoを返す
-func Get_irinfo(ir *IR) *IRInfo {
-    for _, info := range irinfo {
-        if info.Op == ir.Op {
-            return &info
-        }
-    }
-    Error("invalid instruction")
-
-    err := new(IRInfo)
-    return err
-}
-
 func tostr(ir *IR) string {
-    info := Get_irinfo(ir)
+    info := Irinfo_arr[ir.Op]
     switch info.Ty {
     case IR_TY_LABEL:
         return fmt.Sprintf(".L%d:", ir.Lhs)

@@ -77,7 +77,7 @@ type Node struct {
 }
 
 
-// ir.go
+// gen_ir.go
 
 const (
     IR_ADD = iota
@@ -122,7 +122,6 @@ const (
 )
 
 type IRInfo struct {
-    Op int
     Name string
     Ty int
 }

@@ -4,7 +4,7 @@ import (
     . "g9cc/common"
     . "g9cc/util"
     . "g9cc/regs"
-    . "g9cc/ir"
+    . "g9cc/gen_ir"
     // "fmt"
 )
 
@@ -50,10 +50,7 @@ func visit(irv *Vector) {
     for i := 0; i < irv.Len; i++ {
         ir := irv.Data[i].(*IR)
 
-        // 各irに対し Get_irinfo()を呼び出し, irの種類(レジスタの使い方で類別)
-        var info *IRInfo = Get_irinfo(ir)
-
-        switch info.Ty {
+        switch Irinfo_arr[ir.Op].Ty {
         case IR_TY_REG, IR_TY_REG_IMM, IR_TY_REG_LABEL:
             ir.Lhs = alloc(ir.Lhs)
         case IR_TY_REG_REG:
