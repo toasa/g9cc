@@ -114,18 +114,18 @@ func gen(fn *Function) {
             for i := 0; i < ir.Lhs; i++ {
                 fmt.Printf("    mov [rbp-%d], %s\n", (i + 1) * 8, argreg[i])
             }
-        case '+':
+        case IR_ADD:
             fmt.Printf("    add %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
-        case '-':
+        case IR_SUB:
             fmt.Printf("    sub %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
-        case '*':
+        case IR_MUL:
             fmt.Printf("    mov rax, %s\n", Regs[ir.Rhs])
             // mul reg: 予めrax(アキュムレータ)に格納された値と
             //          regに格納された値の掛け算を行い,結果をraxに格納する
             fmt.Printf("    mul %s\n", Regs[ir.Lhs])
             // 掛け算の結果を汎用レジスタに格納する
             fmt.Printf("    mov %s, rax\n", Regs[ir.Lhs])
-        case '/':
+        case IR_DIV:
             // raxに左辺値を代入
             fmt.Printf("    mov rax, %s\n", Regs[ir.Lhs])
             // convert quadword to octaword: 符号拡張(アキュムレータを拡張する)

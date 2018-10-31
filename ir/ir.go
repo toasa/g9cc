@@ -13,10 +13,10 @@ import (
 
 var irinfo []IRInfo = []IRInfo{
     // op, name, ty
-    {'+', "ADD", IR_TY_REG_REG},
-    {'-', "SUB", IR_TY_REG_REG},
-    {'*', "MUL", IR_TY_REG_REG},
-    {'/', "DIV", IR_TY_REG_REG},
+    {IR_ADD, "ADD", IR_TY_REG_REG},
+    {IR_SUB, "SUB", IR_TY_REG_REG},
+    {IR_MUL, "MUL", IR_TY_REG_REG},
+    {IR_DIV, "DIV", IR_TY_REG_REG},
     {IR_IMM, "MOV", IR_TY_REG_IMM},
     {IR_SUB_IMM, "SUB", IR_TY_REG_IMM},
     {IR_MOV, "MOV", IR_TY_REG_REG},
@@ -77,7 +77,7 @@ func tostr(ir *IR) string {
         var sb string
         sb = fmt.Sprintf("r%d = %s(", ir.Lhs, ir.Name)
         for i := 0; i < ir.Nargs; i++ {
-            sb += fmt.Sprintf(", r%d", ir.Args)
+            sb += fmt.Sprintf("r%d, ", ir.Args[i])
         }
         sb += ")"
         return sb + "\000"
@@ -184,11 +184,22 @@ func gen_expr(node *Node) int {
 
     Assert((strings.Contains("+-*/", string(node.Ty))), "operator expected")
 
+    var ty int
+    if node.Ty == '+' {
+        ty = IR_ADD
+    } else if node.Ty == '-' {
+        ty = IR_SUB
+    } else if node.Ty == '*' {
+        ty = IR_MUL
+    } else if node.Ty == '/' {
+        ty = IR_DIV
+    }
+
     // lhs, rhsどちらも数値が格納されている
     var lhs int = gen_expr(node.Lhs)
     var rhs int = gen_expr(node.Rhs)
 
-    add(node.Ty, lhs, rhs)
+    add(ty, lhs, rhs)
     add(IR_KILL, rhs, -1)
 
     return lhs

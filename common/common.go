@@ -80,7 +80,11 @@ type Node struct {
 // ir.go
 
 const (
-    IR_IMM = 256 + iota // immediate value
+    IR_ADD = iota
+    IR_SUB
+    IR_MUL
+    IR_DIV
+    IR_IMM
     IR_SUB_IMM
     IR_MOV
     IR_RETURN
