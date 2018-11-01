@@ -24,7 +24,7 @@ var Irinfo_arr []IRInfo = []IRInfo{
     {"RET", IR_TY_REG},
     {"CALL", IR_TY_CALL},
     {"", IR_TY_LABEL},
-    {"JMP", IR_TY_LABEL},
+    {"JMP", IR_TY_JMP},
     {"UNLESS", IR_TY_REG_LABEL},
     {"LOAD", IR_TY_REG_REG},
     {"STORE", IR_TY_REG_REG},
@@ -50,18 +50,20 @@ func tostr(ir *IR) string {
     case IR_TY_LABEL:
         return fmt.Sprintf(".L%d:", ir.Lhs)
     case IR_TY_IMM:
-        return fmt.Sprintf("%s %d", info.Name, ir.Lhs)
+        return fmt.Sprintf("  %s %d", info.Name, ir.Lhs)
     case IR_TY_REG:
-        return fmt.Sprintf("%s r%d", info.Name, ir.Lhs)
+        return fmt.Sprintf("  %s r%d", info.Name, ir.Lhs)
+    case IR_TY_JMP:
+        return fmt.Sprintf("  %s .L%d", info.Name, ir.Lhs)
     case IR_TY_REG_REG:
-        return fmt.Sprintf("%s r%d, r%d", info.Name, ir.Lhs, ir.Rhs)
+        return fmt.Sprintf("  %s r%d, r%d", info.Name, ir.Lhs, ir.Rhs)
     case IR_TY_REG_IMM:
-        return fmt.Sprintf("%s r%d, %d", info.Name, ir.Lhs, ir.Rhs)
+        return fmt.Sprintf("  %s r%d, %d", info.Name, ir.Lhs, ir.Rhs)
     case IR_TY_REG_LABEL:
-        return fmt.Sprintf("%s r%d, .L%d", info.Name, ir.Lhs, ir.Rhs)
+        return fmt.Sprintf("  %s r%d, .L%d", info.Name, ir.Lhs, ir.Rhs)
     case IR_TY_CALL:
         var sb string
-        sb = fmt.Sprintf("r%d = %s(", ir.Lhs, ir.Name)
+        sb = fmt.Sprintf("  r%d = %s(", ir.Lhs, ir.Name)
         for i := 0; i < ir.Nargs; i++ {
             sb += fmt.Sprintf("r%d, ", ir.Args[i])
         }
@@ -69,7 +71,7 @@ func tostr(ir *IR) string {
         return sb + "\000"
     default:
         Assert(info.Ty == IR_TY_NOARG, "not IR_TY_NOARG")
-        return fmt.Sprintf("%s", info.Name)
+        return fmt.Sprintf("  %s", info.Name)
     }
 }
 
@@ -80,7 +82,7 @@ func Dump_ir(irv *Vector) {
         fmt.Fprintf(os.Stderr, "%s():\n", fn.Name);
         for j := 0; j < fn.Ir.Len; j++ {
             ir := fn.Ir.Data[j].(*IR)
-            fmt.Fprintf(os.Stderr, "  %s\n", tostr(ir))
+            fmt.Fprintf(os.Stderr, "%s\n", tostr(ir))
         }
     }
 }
@@ -124,20 +126,63 @@ func gen_lval(node *Node) int {
 
 func gen_expr(node *Node) int {
 
-    if node.Ty == ND_NUM {
-        var r int = regno
+    switch node.Ty {
+    case ND_NUM:
+        r := regno
         regno++
         add(IR_IMM, r, node.Val)
-        return r;
-    }
+        return r
+    case ND_LOGAND:
+        // return処理を行うラベルx
+        x := label
+        label++
 
-    if node.Ty == ND_IDENT {
+        var r1 int = gen_expr(node.Lhs)
+        // レジスタr1の値がfalse(0)ならばラベルxへ飛ぶ
+        add(IR_UNLESS, r1, x)
+        var r2 int = gen_expr(node.Rhs)
+        add(IR_MOV, r1, r2)
+        add(IR_KILL, r2, -1)
+        // r2の値が0でもラベルxへjmp
+        add(IR_UNLESS, r1, x)
+        // r1, r2ともにfalse(0)ではなかったため、
+        // 戻り値としてtrue(1)を返すためr1に1を代入する
+        add(IR_IMM, r1, 1)
+        add(IR_LABEL, x, -1)
+        return r1
+    case ND_LOGOR:
+        // 中継先のラベル
+        x := label
+        label++
+        // 最終的な行き先のラベル
+        y := label
+        label++
+
+        var r1 int = gen_expr(node.Lhs)
+        add(IR_UNLESS, r1, x)
+        // r1値がfalse(0)でない場合, r1にtrue(1)を代入し,
+        // y(最終的なラベル)に飛ぶ
+        add(IR_IMM, r1, 1)
+        add(IR_JMP, y, -1)
+
+        // 中継先ラベルxの用意
+        add(IR_LABEL, x, -1)
+
+        var r2 int = gen_expr(node.Rhs)
+        add(IR_MOV, r1, r2)
+        add(IR_KILL, r2, -1)
+        // r1値がtrue(0)でかつ, r2値がfalse(0)のときラベルyへ飛ぶ
+        add(IR_UNLESS, r1, y)
+        // r1値がtrue(0)でかつ, r2値もtrue(1)のため,
+        // 戻り値としてtrue(1)を返す。そのためにr1に値1を代入する
+        add(IR_IMM, r1, 1)
+        add(IR_LABEL, y, -1)
+        return r1
+    case ND_IDENT:
         var r int = gen_lval(node)
         add(IR_LOAD, r, r)
         return r
-    }
-
-    if node.Ty == ND_CALL {
+    case ND_CALL:
         var args [6]int
         for i := 0; i < node.Args.Len; i++ {
             // 関数に引数がある場合
@@ -157,9 +202,7 @@ func gen_expr(node *Node) int {
             add(IR_KILL, ir.Args[i], -1)
         }
         return r
-    }
-
-    if node.Ty == '=' {
+    case '=':
         var rhs int = gen_expr(node.Rhs)
         // lhsはメモリへstoreするためのアドレスが格納されたレジスタ(の番号)が入っている
         var lhs int = gen_lval(node.Lhs)
@@ -198,7 +241,7 @@ func gen_stmt(node *Node) {
         x := label
         label++
 
-        // jmp命令での飛び先のラベルxをRhsに格納する
+        // レジスタrの値がfalse(0)ならばラベルxへ飛ぶ
         add(IR_UNLESS, r, x)
         add(IR_KILL, r, -1)
 

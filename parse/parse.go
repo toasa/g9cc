@@ -91,17 +91,14 @@ func mul() *Node {
     var lhs *Node = term()
 
     for true {
-        t, ok := tokens.Data[pos].(*Token)
-        if !ok {
-            Error("Not *Token type is in tokens.data[]")
-        }
+        t := tokens.Data[pos].(*Token)
 
-        op := t.Ty
-        if !(op == '*' || op == '/') {
+        if !(t.Ty == '*' || t.Ty == '/') {
             return lhs
         }
+        // t.Tyが * または　/ の場合
         pos++
-        lhs = new_node(op, lhs, term())
+        lhs = new_node(t.Ty, lhs, term())
     }
 
     // ここには通常到達しない
@@ -110,7 +107,7 @@ func mul() *Node {
 }
 
 // expression
-func expr() *Node {
+func add() *Node {
 
     // この文はすごい
     // 2 * 3 + 4, 2 + 3 * 4 から以下の構文木を作成した
@@ -125,17 +122,13 @@ func expr() *Node {
     var lhs *Node = mul()
 
     for true {
-        t, ok := tokens.Data[pos].(*Token)
-        if !ok {
-            Error("Not *Token type is in tokens.data[]")
-        }
+        t := tokens.Data[pos].(*Token)
 
-        op := t.Ty
-        if !(op == '+' || op == '-') {
+        if !(t.Ty == '+' || t.Ty == '-') {
             return lhs
         }
         pos++
-        lhs = new_node(op, lhs, mul())
+        lhs = new_node(t.Ty, lhs, mul())
     }
 
     // 通常ここには到達しない
@@ -143,11 +136,41 @@ func expr() *Node {
     return err
 }
 
+func logand() *Node {
+    var lhs *Node = add()
+    for true {
+        t := tokens.Data[pos].(*Token)
+        if t.Ty != TK_LOGAND {
+            return lhs
+        }
+        pos++
+        lhs = new_node(ND_LOGAND, lhs, add())
+    }
+
+    err := new(Node)
+    return err
+}
+
+func logor() *Node {
+    var lhs *Node = logand()
+    for true {
+        t := tokens.Data[pos].(*Token)
+        if t.Ty != TK_LOGOR {
+            return lhs
+        }
+        pos++
+        lhs = new_node(ND_LOGOR, lhs, logand())
+    }
+
+    err := new(Node)
+    return err
+}
+
 func assign() *Node {
-    lhs := expr()
+    lhs := logor()
     if consume('=') {
         // =文の場合
-        return new_node('=', lhs, expr())
+        return new_node('=', lhs, logor())
     }
     // =文でない場合
     return lhs

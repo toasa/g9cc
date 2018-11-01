@@ -5,7 +5,6 @@ import (
     . "g9cc/util"
     . "g9cc/regs"
     . "g9cc/gen_ir"
-    // "fmt"
 )
 
 // Register allocator

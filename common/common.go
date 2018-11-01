@@ -28,6 +28,8 @@ const (
     TK_IDENT // Identifier
     TK_IF // "if"
     TK_ELSE // "else"
+    TK_LOGOR // ||
+    TK_LOGAND // &&
     TK_RETURN // "return"
     TK_EOF
 )
@@ -47,6 +49,8 @@ const (
     ND_NUM = iota + 256 // number literal
     ND_IDENT // identifier
     ND_IF // "if"
+    ND_LOGAND // &&
+    ND_LOGOR // ||
     ND_RETURN // "return"
     ND_CALL // Function call
     ND_FUNC // Function definition
@@ -114,6 +118,7 @@ const (
     IR_TY_NOARG = iota
     IR_TY_REG
     IR_TY_IMM
+    IR_TY_JMP
     IR_TY_LABEL
     IR_TY_REG_REG
     IR_TY_REG_IMM
