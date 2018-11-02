@@ -41,8 +41,8 @@ func Scan(s string) *Vector {
                 continue
             }
 
-            // single-letter token
-            if strings.Contains("+-*/;=(),{}", string(s[i_input])) {
+            // Single-letter token
+            if strings.Contains("+-*/;=(),{}<>", string(s[i_input])) {
                 add_token(v, int(s[i_input]), string(s[i_input]))
                 i_input++
                 continue

@@ -18,7 +18,7 @@ import (
 // ・スタック上の引数データの削除は呼び出し側で行う
 
 // x64 calling convention(cc)
-// 整数・ポインタ引数: rdi, rsi, rdx, rcx, r8, r9
+// 関数の引数、整数・ポインタ引数: rdi, rsi, rdx, rcx, r8, r9
 // 戻り値: rax
 // システムコール: rcx
 // レジスタのみでは引数の数が不足する場合、スタックを使用
@@ -100,6 +100,16 @@ func gen(fn *Function) {
             fmt.Printf("    mov %s, rax\n", Regs[ir.Lhs])
         case IR_LABEL:
             fmt.Printf(".L%d:\n", ir.Lhs)
+        case IR_LT:
+            fmt.Printf("    cmp %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+            fmt.Printf("    setl %s\n", Regs8[ir.Lhs])
+            // 9cc には movzb と記載, だがアセンブリ時
+            // error: invalid instruction mnemonic 'movzb'　となった
+            // movzbl: move zero extended byte to long
+
+            // こちらはうまく行った
+            // movzx: move with zero extention
+             fmt.Printf("    movzx %s, %s\n", Regs[ir.Lhs], Regs8[ir.Lhs])
         case IR_JMP:
             fmt.Printf("    jmp .L%d\n", ir.Lhs)
         case IR_UNLESS:

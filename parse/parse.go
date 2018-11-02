@@ -136,15 +136,37 @@ func add() *Node {
     return err
 }
 
-func logand() *Node {
+func rel() *Node {
     var lhs *Node = add()
+    for true {
+        t := tokens.Data[pos].(*Token)
+        if t.Ty == '<' {
+            pos++
+            lhs = new_node('<', lhs, add())
+            continue
+        }
+        if t.Ty == '>' {
+            pos++
+            lhs = new_node('<', add(), lhs)
+            continue
+        }
+
+        return lhs
+    }
+
+    err := new(Node)
+    return err
+}
+
+func logand() *Node {
+    var lhs *Node = rel()
     for true {
         t := tokens.Data[pos].(*Token)
         if t.Ty != TK_LOGAND {
             return lhs
         }
         pos++
-        lhs = new_node(ND_LOGAND, lhs, add())
+        lhs = new_node(ND_LOGAND, lhs, rel())
     }
 
     err := new(Node)

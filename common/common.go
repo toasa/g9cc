@@ -94,6 +94,7 @@ const (
     IR_RETURN
     IR_CALL
     IR_LABEL
+    IR_LT
     IR_JMP
     IR_UNLESS
     IR_LOAD

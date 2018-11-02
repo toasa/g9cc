@@ -3,7 +3,6 @@ package ir
 import (
     . "g9cc/common"
     . "g9cc/util"
-    "strings"
     "fmt"
     "os"
 )
@@ -24,6 +23,7 @@ var Irinfo_arr []IRInfo = []IRInfo{
     {"RET", IR_TY_REG},
     {"CALL", IR_TY_CALL},
     {"", IR_TY_LABEL},
+    {"LT", IR_TY_REG_REG},
     {"JMP", IR_TY_JMP},
     {"UNLESS", IR_TY_REG_LABEL},
     {"LOAD", IR_TY_REG_REG},
@@ -124,6 +124,14 @@ func gen_lval(node *Node) int {
     return r
 }
 
+func gen_binop(ty int, lhs *Node, rhs *Node) int {
+    r1 := gen_expr(lhs)
+    r2 := gen_expr(rhs)
+    add(ty, r1, r2)
+    add(IR_KILL, r2, -1)
+    return r1
+}
+
 func gen_expr(node *Node) int {
 
     switch node.Ty {
@@ -209,29 +217,22 @@ func gen_expr(node *Node) int {
         add(IR_STORE, lhs, rhs)
         add(IR_KILL, rhs, -1)
         return lhs
+    case '+':
+        return gen_binop(IR_ADD, node.Lhs, node.Rhs)
+    case '-':
+        return gen_binop(IR_SUB, node.Lhs, node.Rhs)
+    case '*':
+        return gen_binop(IR_MUL, node.Lhs, node.Rhs)
+    case '/':
+        return gen_binop(IR_DIV, node.Lhs, node.Rhs)
+    case '<':
+        return gen_binop(IR_LT, node.Lhs, node.Rhs)
+    default:
+        Assert(false, "unknown AST type")
     }
 
-    Assert((strings.Contains("+-*/", string(node.Ty))), "operator expected")
-
-    var ty int
-    if node.Ty == '+' {
-        ty = IR_ADD
-    } else if node.Ty == '-' {
-        ty = IR_SUB
-    } else if node.Ty == '*' {
-        ty = IR_MUL
-    } else if node.Ty == '/' {
-        ty = IR_DIV
-    }
-
-    // lhs, rhsどちらも数値が格納されている
-    var lhs int = gen_expr(node.Lhs)
-    var rhs int = gen_expr(node.Rhs)
-
-    add(ty, lhs, rhs)
-    add(IR_KILL, rhs, -1)
-
-    return lhs
+    err := 0
+    return err
 }
 
 func gen_stmt(node *Node) {
