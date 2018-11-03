@@ -263,6 +263,24 @@ func gen_stmt(node *Node) {
         return
     }
 
+    if node.Ty == ND_FOR {
+        x := label
+        label++
+        y := label
+        label++
+
+        add(IR_KILL, gen_expr(node.Init), -1)
+        add(IR_LABEL, x, -1)
+        r := gen_expr(node.Cond)
+        add(IR_UNLESS, r, y)
+        add(IR_KILL, r, -1)
+        gen_stmt(node.Body)
+        add(IR_KILL, gen_expr(node.Inc), -1)
+        add(IR_JMP, x, -1)
+        add(IR_LABEL, y, -1)
+        return
+    }
+
     if node.Ty == ND_RETURN {
         r := gen_expr(node.Expr)
         add(IR_RETURN, r, -1)

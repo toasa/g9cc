@@ -10,7 +10,9 @@ import (
 // Register allocator
 var used []bool
 
-// IRの命令数分の要素をもつ配列(alloc_regs()で初期化)
+// IRの命令数分の要素をもつ配列(Alloc_regs()で初期化)
+// 各中間表現にどのレジスタを割り当てるかを記録する配列
+// 添字: 中間表現の順番, 要素: （レジスタの配列Regsの）何番目のレジスタを割り当てるか
 var reg_map []int
 
 func alloc(ir_reg int) int {

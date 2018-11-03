@@ -73,7 +73,7 @@ func main() {
     if dump_ir1 {
         ir.Dump_ir(fns)
     }
-    // PrintVector(fns)
+    //PrintVector(fns)
 
     regalloc.Alloc_regs(fns)
 

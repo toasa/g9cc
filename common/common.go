@@ -28,6 +28,7 @@ const (
     TK_IDENT // Identifier
     TK_IF // "if"
     TK_ELSE // "else"
+    TK_FOR // "for"
     TK_LOGOR // ||
     TK_LOGAND // &&
     TK_RETURN // "return"
@@ -49,6 +50,7 @@ const (
     ND_NUM = iota + 256 // number literal
     ND_IDENT // identifier
     ND_IF // "if"
+    ND_FOR // "for"
     ND_LOGAND // &&
     ND_LOGOR // ||
     ND_RETURN // "return"
@@ -68,12 +70,14 @@ type Node struct {
 
     Name string // Identifier
 
-    // "if"
+    // "if" (cond) then "else" els
+    // "for" (init; cond; inc) body
     Cond *Node // condtion in IF stmt
     Then *Node
     Els *Node
 
-    // Function definition
+    Init *Node
+    Inc *Node
     Body *Node
 
     // Function call

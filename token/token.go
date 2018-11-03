@@ -17,16 +17,17 @@ func add_token(v *Vector, ty int, input string) *Token {
 }
 
 // var keywords *Map
-var keywords map[string]interface{}
+// var keywords map[string]interface{}
 
 var symbols = []struct {
     name string
     ty int
 }{
-    {"&&", TK_LOGAND}, {"||", TK_LOGOR}, {"\000", 0},
+    {"else", TK_ELSE}, {"for", TK_FOR}, {"if", TK_IF}, {"return", TK_RETURN},
+    {"&&", TK_LOGAND}, {"||", TK_LOGOR}, {"NULL", 0},
 }
 
-func Scan(s string) *Vector {
+func scan(s string) *Vector {
     var v *Vector = New_vec()
 
     // index of input
@@ -49,16 +50,22 @@ func Scan(s string) *Vector {
             }
 
             // Multi-letter token
-            for i := 0; symbols[i].name != "\000"; i++ {
+            for i := 0; symbols[i].name != "NULL"; i++ {
                 name := symbols[i].name
-                len := len(name)
-                if s[i_input : i_input+len] != name {
+                l := len(name)
+
+                // 下のs[i_input:i_input+l]でスライスの右側が文字列の長さを超えることがあり、
+                // errorが出ていたため、ここを記述.
+                if len(s) <= i_input + l {
+                    continue
+                }
+                if s[i_input:i_input+l] != name {
                     continue
                 }
 
                 add_token(v, symbols[i].ty, name)
                 //i++
-                i_input += len
+                i_input += l
                 goto loop
             }
 
@@ -71,17 +78,17 @@ func Scan(s string) *Vector {
                     len++
                     i = len + i_input
                 }
-                var name string = s[i_input:len + i_input]
 
                 // nameがmap keywordsに登録されていない場合, 識別子(identifier)とみなされる
-                ty, _ := keywords[name].(int)
+                // ty, _ := keywords[name].(int)
+                //
+                // if ty == 0 {
+                //     ty = TK_IDENT
+                // }
 
-                if ty == 0 {
-                    ty = TK_IDENT
-                }
-
-                t := add_token(v, ty, name)
-                t.Name = name
+                t := add_token(v, TK_IDENT, s)
+                //var name string = s[i_input:len + i_input]
+                t.Name = s[i_input:len + i_input]
                 i_input += len
                 continue
             }
@@ -111,12 +118,12 @@ func Scan(s string) *Vector {
 func Tokenize(s string) *Vector {
 
     // 自作のmapではなく, Go付属のmapを使用
-    keywords = make(map[string]interface{})
-    keywords["return"] = TK_RETURN
-    keywords["if"] = TK_IF
-    keywords["else"] = TK_ELSE
+    // keywords = make(map[string]interface{})
+    // keywords["return"] = TK_RETURN
+    // keywords["if"] = TK_IF
+    // keywords["else"] = TK_ELSE
 
-    return Scan(s)
+    return scan(s)
 }
 
 func isdigit(c uint8) bool {

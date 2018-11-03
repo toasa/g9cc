@@ -106,7 +106,6 @@ func mul() *Node {
     return err
 }
 
-// expression
 func add() *Node {
 
     // この文はすごい
@@ -136,6 +135,7 @@ func add() *Node {
     return err
 }
 
+// 四則演算(mul(), add())が終わったところでrelを呼び,不等号のチェックを行う
 func rel() *Node {
     var lhs *Node = add()
     for true {
@@ -215,6 +215,18 @@ func stmt() *Node {
         if consume(TK_ELSE) {
             node.Els = stmt()
         }
+        return node
+    case TK_FOR:
+        pos++
+        node.Ty = ND_FOR
+        expect('(')
+        node.Init = assign()
+        expect(';')
+        node.Cond = assign()
+        expect(';')
+        node.Inc = assign()
+        expect(')')
+        node.Body = stmt()
         return node
     case TK_RETURN:
         pos++
