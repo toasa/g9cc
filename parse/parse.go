@@ -234,6 +234,14 @@ func stmt() *Node {
         node.Expr = assign()
         expect(';')
         return node
+    case '{':
+        pos++
+        node.Ty = ND_COMP_STMT
+        node.Stmts = New_vec()
+        for !consume('}') {
+            Vec_push(node.Stmts, stmt())
+        }
+        return node
     default:
         node.Ty = ND_EXPR_STMT
         node.Expr = assign()
