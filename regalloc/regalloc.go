@@ -39,11 +39,6 @@ func alloc(ir_reg int) int {
     return 0 // ここには到達しないため(intを返さないと怒るコンパイラを鎮める他に)イミなし
 }
 
-func kill(r int) {
-    Assert(used[r], "kill error")
-    used[r] = false
-}
-
 func visit(irv *Vector) {
     reg_map[0] = 0
     used[0] = true
@@ -65,7 +60,8 @@ func visit(irv *Vector) {
         }
 
         if ir.Op == IR_KILL {
-            kill(ir.Lhs)
+            Assert(used[ir.Lhs], "kill error")
+            used[ir.Lhs] = false
             ir.Op = IR_NOP
         }
     }
