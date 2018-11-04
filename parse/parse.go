@@ -200,9 +200,22 @@ func assign() *Node {
 
 func stmt() *Node {
     node := new(Node)
-    t, _ := tokens.Data[pos].(*Token)
+    t := tokens.Data[pos].(*Token)
 
     switch t.Ty {
+    case TK_INT:
+        pos++
+        node.Ty = ND_VARDEF
+
+        t = tokens.Data[pos].(*Token)
+        if t.Ty != TK_IDENT {
+            Error(fmt.Sprintf("variable name expected, but got %s", t.Input))
+        }
+        node.Name = t.Name
+        pos++
+
+        expect(';')
+        return node
     case TK_IF:
         pos++
         node.Ty = ND_IF
@@ -274,6 +287,13 @@ func function() *Node {
     node.Args = New_vec()
 
     t := tokens.Data[pos].(*Token)
+
+    if t.Ty != TK_INT {
+        Error(fmt.Sprintf("function return type expected, but got %s", t.Input))
+    }
+    pos++;
+
+    t = tokens.Data[pos].(*Token)
     if t.Ty != TK_IDENT {
         Error(fmt.Sprintf("function name expected, but got %s", t.Input))
     }

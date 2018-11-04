@@ -26,6 +26,7 @@ type StringBuilder struct {
 const (
     TK_NUM = iota + 256 // Number Literal
     TK_IDENT // Identifier
+    TK_INT // "int"
     TK_IF // "if"
     TK_ELSE // "else"
     TK_FOR // "for"
@@ -49,6 +50,7 @@ type Token struct {
 const (
     ND_NUM = iota + 256 // number literal
     ND_IDENT // identifier
+    ND_VARDEF // "Variable definition"
     ND_IF // "if"
     ND_FOR // "for"
     ND_LOGAND // &&

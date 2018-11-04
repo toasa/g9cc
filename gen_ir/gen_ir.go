@@ -96,7 +96,7 @@ func add(op int, lhs int, rhs int) *IR {
     return ir
 }
 
-// 左辺値には識別子がくる
+// cにおいて代入文の
 func gen_lval(node *Node) int {
     if node.Ty != ND_IDENT {
         Error("not an lvalue")
@@ -105,11 +105,7 @@ func gen_lval(node *Node) int {
     _, ok := vars[node.Name]
 
     if !ok {
-        // varsに識別子の登録がされていない場合
-        // 識別子をメモリ上へstoreしたり、メモリからloadする時、
-        // base pointerからの距離を, map varsに格納しておく。
-        stacksize += 8
-        vars[node.Name] = stacksize
+        Error(fmt.Sprintf("undefined variable: %s", node.Name))
     }
 
     var r int = regno
@@ -236,6 +232,14 @@ func gen_expr(node *Node) int {
 }
 
 func gen_stmt(node *Node) {
+    if node.Ty == ND_VARDEF {
+        // varsに識別子の登録がされていない場合
+        // 識別子をメモリ上へstoreしたり、メモリからloadする時のために、
+        // base pointerからの距離を, map varsに格納しておく。
+        stacksize += 8
+        vars[node.Name] = stacksize
+        return
+    }
 
     if node.Ty == ND_IF {
         r := gen_expr(node.Cond)
