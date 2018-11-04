@@ -28,6 +28,11 @@ func consume(ty int) bool {
     }
 }
 
+func is_typename() bool {
+    t := tokens.Data[pos].(*Token)
+    return t.Ty == TK_INT
+}
+
 func new_node(op int, lhs *Node, rhs *Node) *Node {
     n := new(Node) // new()関数でNode型のポインタを返す
     n.Ty = op
@@ -198,28 +203,40 @@ func assign() *Node {
     return lhs
 }
 
+func decl() *Node {
+    node := new(Node)
+    node.Ty = ND_VARDEF
+    pos++
+
+    t := tokens.Data[pos].(*Token)
+    if t.Ty != TK_IDENT {
+        Error(fmt.Sprintf("variable name expected, but got %s", t.Input))
+    }
+    node.Name = t.Name
+    pos++
+
+    if consume('=') {
+        node.Init = assign()
+    }
+    expect(';')
+    return node
+}
+
+func expr_stmt() *Node {
+    node := new(Node)
+    node.Ty = ND_EXPR_STMT
+    node.Expr = assign()
+    expect(';')
+    return node
+}
+
 func stmt() *Node {
     node := new(Node)
     t := tokens.Data[pos].(*Token)
 
     switch t.Ty {
     case TK_INT:
-        pos++
-        node.Ty = ND_VARDEF
-
-        t = tokens.Data[pos].(*Token)
-        if t.Ty != TK_IDENT {
-            Error(fmt.Sprintf("variable name expected, but got %s", t.Input))
-        }
-        node.Name = t.Name
-        pos++
-
-        if consume('=') {
-            node.Init = assign()
-        }
-
-        expect(';')
-        return node
+        return decl()
     case TK_IF:
         pos++
         node.Ty = ND_IF
@@ -237,8 +254,13 @@ func stmt() *Node {
         pos++
         node.Ty = ND_FOR
         expect('(')
-        node.Init = assign()
-        expect(';')
+        // node.Init = assign()
+        // expect(';')
+        if is_typename() {
+            node.Init = decl()
+        } else {
+            node.Init = expr_stmt()
+        }
         node.Cond = assign()
         expect(';')
         node.Inc = assign()
@@ -260,10 +282,10 @@ func stmt() *Node {
         }
         return node
     default:
-        node.Ty = ND_EXPR_STMT
-        node.Expr = assign()
-        expect(';')
-        return node
+        // node.Ty = ND_EXPR_STMT
+        // node.Expr = assign()
+        // expect(';')
+        return expr_stmt()
     }
 
     err := new(Node)
