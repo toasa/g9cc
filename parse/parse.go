@@ -214,6 +214,10 @@ func stmt() *Node {
         node.Name = t.Name
         pos++
 
+        if consume('=') {
+            node.Init = assign()
+        }
+
         expect(';')
         return node
     case TK_IF:

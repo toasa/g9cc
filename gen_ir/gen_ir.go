@@ -238,6 +238,23 @@ func gen_stmt(node *Node) {
         // base pointerからの距離を, map varsに格納しておく。
         stacksize += 8
         vars[node.Name] = stacksize
+
+        if node.Init == nil {
+            return
+        }
+
+        var rhs int = gen_expr(node.Init)
+        var lhs int = regno
+        regno++
+        // lhsにベースレジスタのアドレスを代入
+        add(IR_MOV, lhs, 0)
+        // ベースレジスタから、変数のオフセット分引く
+        add(IR_SUB_IMM, lhs, stacksize)
+        // メモリ上のスタックで、左辺値(lhs)に対し、右辺値(rhs)を代入する
+        add(IR_STORE, lhs, rhs)
+        add(IR_KILL, lhs, -1)
+        add(IR_KILL, rhs, -1)
+
         return
     }
 
