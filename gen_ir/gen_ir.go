@@ -259,9 +259,28 @@ func gen_stmt(node *Node) {
     }
 
     if node.Ty == ND_IF {
-        r := gen_expr(node.Cond)
+        if Node2bool(node.Els) {
+            // else文がある場合
+            x := label
+            label++
+            y := label
+            label++
+            r := gen_expr(node.Cond)
+            // レジスタrの値がfalse(0)の場合, ラベルxへジャンプする
+            add(IR_UNLESS, r, x)
+            add(IR_KILL, r, -1)
+
+            gen_stmt(node.Then)
+            add(IR_JMP, y, -1)
+            add(IR_LABEL, x, -1)
+
+            gen_stmt(node.Els)
+            add(IR_LABEL, y, -1)
+        }
+
         x := label
         label++
+        r := gen_expr(node.Cond)
 
         // レジスタrの値がfalse(0)ならばラベルxへ飛ぶ
         add(IR_UNLESS, r, x)
@@ -269,18 +288,7 @@ func gen_stmt(node *Node) {
 
         gen_stmt(node.Then)
 
-        if !(Node2bool(node.Els)) {
-            // else文がない場合
-            add(IR_LABEL, x, -1)
-            return
-        }
-
-        y := label
-        label++
-        add(IR_JMP, y, -1)
         add(IR_LABEL, x, -1)
-        gen_stmt(node.Els)
-        add(IR_LABEL, y, -1)
         return
     }
 
