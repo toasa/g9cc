@@ -343,6 +343,7 @@ func function() *Node {
     expect('(')
     if !consume(')') {
         // 引数が存在した場合
+        // param()を呼び出すこと引数の変数宣言(ex. add(int x, int y){})を認めた
         Vec_push(node.Args, param())
         for consume(',') {
             Vec_push(node.Args, param())

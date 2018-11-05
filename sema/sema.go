@@ -1,3 +1,7 @@
+// gen_ir.goが担っていた機能, 各識別子や変数をstoreやloadするために
+// base pointerからの距離を, map varsに格納し、node.Offsetに代入する機能,
+// これをsema.goに書いた.
+
 package sema
 
 import (
@@ -6,6 +10,7 @@ import (
     "fmt"
 )
 
+// 各識別子において、rbpからのoffsetを登録するための辞書
 var vars map[string]interface{}
 var stacksize int
 

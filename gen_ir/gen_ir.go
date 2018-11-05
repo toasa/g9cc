@@ -34,14 +34,8 @@ var Irinfo_arr []IRInfo = []IRInfo{
 }
 
 var code *Vector
-//
-// // 各識別子のrbpからのoffsetを登録するための辞書
-// var vars map[string]interface{}
-// // 汎用レジスタの番号
+// 汎用レジスタの番号
 var regno int
-//
-// var stacksize int
-//
 var label int
 
 func tostr(ir *IR) string {
@@ -98,15 +92,6 @@ func add(op int, lhs int, rhs int) *IR {
 
 // cにおいて代入文の
 func gen_lval(node *Node) int {
-    // if node.Ty != ND_IDENT {
-    //     Error("not an lvalue")
-    // }
-    //
-    // _, ok := vars[node.Name]
-    //
-    // if !ok {
-    //     Error(fmt.Sprintf("undefined variable: %s", node.Name))
-    // }
 
     if node.Ty != ND_LVAR {
         Error(fmt.Sprintf("not lvalue: %d (%s)", node.Ty, node.Name))
@@ -235,7 +220,7 @@ func gen_expr(node *Node) int {
 
 func gen_stmt(node *Node) {
     if node.Ty == ND_VARDEF {
-
+        
         if node.Init == nil {
             return
         }
@@ -256,6 +241,7 @@ func gen_stmt(node *Node) {
     }
 
     if node.Ty == ND_IF {
+
         if Node2bool(node.Els) {
             // else文がある場合
             x := label
@@ -330,25 +316,6 @@ func gen_stmt(node *Node) {
 
     Error(fmt.Sprintf("unknown node: %d", node.Ty))
 }
-
-// func gen_args(nodes *Vector) {
-//     if nodes.Len == 0 {
-//         return
-//     }
-//
-//     add(IR_SAVE_ARGS, nodes.Len, -1)
-//
-//     // varsに各識別子のoffsetを登録する処理
-//     for i := 0; i < nodes.Len; i++ {
-//         node := nodes.Data[i].(*Node)
-//         if node.Ty != ND_IDENT {
-//             Error("bad parameter")
-//         }
-//
-//         stacksize += 8
-//         vars[node.Name] = stacksize
-//     }
-// }
 
 func Gen_ir(nodes *Vector) *Vector{
 
