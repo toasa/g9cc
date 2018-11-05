@@ -33,11 +33,6 @@ var Irinfo_arr []IRInfo = []IRInfo{
     {"NOP", IR_TY_NOARG},
 }
 
-var code *Vector
-// 汎用レジスタの番号
-var regno int
-var label int
-
 func tostr(ir *IR) string {
     info := Irinfo_arr[ir.Op]
     switch info.Ty {
@@ -81,6 +76,11 @@ func Dump_ir(irv *Vector) {
     }
 }
 
+var code *Vector
+// 汎用レジスタの番号
+var nreg int
+var nlabel int
+
 func add(op int, lhs int, rhs int) *IR {
     var ir *IR = new(IR)
     ir.Op = op
@@ -90,14 +90,22 @@ func add(op int, lhs int, rhs int) *IR {
     return ir
 }
 
+func kill(r int) {
+    add(IR_KILL, r, -1)
+}
+
+func label(x int) {
+    add(IR_LABEL, x, -1)
+}
+
 // cにおいて代入文の
 func gen_lval(node *Node) int {
 
     if node.Ty != ND_LVAR {
         Error(fmt.Sprintf("not lvalue: %d (%s)", node.Ty, node.Name))
     }
-    var r int = regno
-    regno++
+    var r int = nreg
+    nreg++
 
     // r(現在の汎用レジスタ)にrbpを代入する
     add(IR_MOV, r, 0)
@@ -111,7 +119,7 @@ func gen_binop(ty int, lhs *Node, rhs *Node) int {
     r1 := gen_expr(lhs)
     r2 := gen_expr(rhs)
     add(ty, r1, r2)
-    add(IR_KILL, r2, -1)
+    kill(r2)
     return r1
 }
 
@@ -119,35 +127,35 @@ func gen_expr(node *Node) int {
 
     switch node.Ty {
     case ND_NUM:
-        r := regno
-        regno++
+        r := nreg
+        nreg++
         add(IR_IMM, r, node.Val)
         return r
     case ND_LOGAND:
         // return処理を行うラベルx
-        x := label
-        label++
+        x := nlabel
+        nlabel++
 
         var r1 int = gen_expr(node.Lhs)
         // レジスタr1の値がfalse(0)ならばラベルxへ飛ぶ
         add(IR_UNLESS, r1, x)
         var r2 int = gen_expr(node.Rhs)
         add(IR_MOV, r1, r2)
-        add(IR_KILL, r2, -1)
+        kill(r2)
         // r2の値が0でもラベルxへjmp
         add(IR_UNLESS, r1, x)
         // r1, r2ともにfalse(0)ではなかったため、
         // 戻り値としてtrue(1)を返すためr1に1を代入する
         add(IR_IMM, r1, 1)
-        add(IR_LABEL, x, -1)
+        label(x)
         return r1
     case ND_LOGOR:
         // 中継先のラベル
-        x := label
-        label++
+        x := nlabel
+        nlabel++
         // 最終的な行き先のラベル
-        y := label
-        label++
+        y := nlabel
+        nlabel++
 
         var r1 int = gen_expr(node.Lhs)
         add(IR_UNLESS, r1, x)
@@ -157,17 +165,17 @@ func gen_expr(node *Node) int {
         add(IR_JMP, y, -1)
 
         // 中継先ラベルxの用意
-        add(IR_LABEL, x, -1)
+        label(x)
 
         var r2 int = gen_expr(node.Rhs)
         add(IR_MOV, r1, r2)
-        add(IR_KILL, r2, -1)
+        kill(r2)
         // r1値がtrue(0)でかつ, r2値がfalse(0)のときラベルyへ飛ぶ
         add(IR_UNLESS, r1, y)
         // r1値がtrue(0)でかつ, r2値もtrue(1)のため,
         // 戻り値としてtrue(1)を返す。そのためにr1に値1を代入する
         add(IR_IMM, r1, 1)
-        add(IR_LABEL, y, -1)
+        label(y)
         return r1
     case ND_LVAR:
         var r int = gen_lval(node)
@@ -181,8 +189,8 @@ func gen_expr(node *Node) int {
             args[i] = gen_expr(arg)
         }
 
-        r := regno
-        regno++
+        r := nreg
+        nreg++
 
         var ir *IR = add(IR_CALL, r, -1)
         ir.Name = node.Name
@@ -190,7 +198,7 @@ func gen_expr(node *Node) int {
         ir.Args = args
 
         for i := 0; i < ir.Nargs; i++ {
-            add(IR_KILL, ir.Args[i], -1)
+            kill(ir.Args[i])
         }
         return r
     case '=':
@@ -198,7 +206,7 @@ func gen_expr(node *Node) int {
         // lhsはメモリへstoreするためのアドレスが格納されたレジスタ(の番号)が入っている
         var lhs int = gen_lval(node.Lhs)
         add(IR_STORE, lhs, rhs)
-        add(IR_KILL, rhs, -1)
+        kill(rhs)
         return lhs
     case '+':
         return gen_binop(IR_ADD, node.Lhs, node.Rhs)
@@ -220,23 +228,22 @@ func gen_expr(node *Node) int {
 
 func gen_stmt(node *Node) {
     if node.Ty == ND_VARDEF {
-        
+
         if node.Init == nil {
             return
         }
 
         var rhs int = gen_expr(node.Init)
-        var lhs int = regno
-        regno++
+        var lhs int = nreg
+        nreg++
         // lhsにベースレジスタのアドレスを代入
         add(IR_MOV, lhs, 0)
         // ベースレジスタから、変数のオフセット分引く
         add(IR_SUB_IMM, lhs, node.Offset)
         // メモリ上のスタックで、左辺値(lhs)に対し、右辺値(rhs)を代入する
         add(IR_STORE, lhs, rhs)
-        add(IR_KILL, lhs, -1)
-        add(IR_KILL, rhs, -1)
-
+        kill(lhs)
+        kill(rhs)
         return
     }
 
@@ -244,65 +251,64 @@ func gen_stmt(node *Node) {
 
         if Node2bool(node.Els) {
             // else文がある場合
-            x := label
-            label++
-            y := label
-            label++
+            x := nlabel
+            nlabel++
+            y := nlabel
+            nlabel++
             r := gen_expr(node.Cond)
             // レジスタrの値がfalse(0)の場合, ラベルxへジャンプする
             add(IR_UNLESS, r, x)
-            add(IR_KILL, r, -1)
+            kill(r)
 
             gen_stmt(node.Then)
             add(IR_JMP, y, -1)
-            add(IR_LABEL, x, -1)
+            label(x)
 
             gen_stmt(node.Els)
-            add(IR_LABEL, y, -1)
+            label(y)
         }
 
-        x := label
-        label++
+        x := nlabel
+        nlabel++
         r := gen_expr(node.Cond)
 
         // レジスタrの値がfalse(0)ならばラベルxへ飛ぶ
         add(IR_UNLESS, r, x)
-        add(IR_KILL, r, -1)
+        kill(r)
 
         gen_stmt(node.Then)
 
-        add(IR_LABEL, x, -1)
+        label(x)
         return
     }
 
     if node.Ty == ND_FOR {
-        x := label
-        label++
-        y := label
-        label++
+        x := nlabel
+        nlabel++
+        y := nlabel
+        nlabel++
 
         gen_stmt(node.Init)
-        add(IR_LABEL, x, -1)
+        label(x)
         r := gen_expr(node.Cond)
         add(IR_UNLESS, r, y)
-        add(IR_KILL, r, -1)
+        kill(r)
         gen_stmt(node.Body)
-        add(IR_KILL, gen_expr(node.Inc), -1)
+        kill(gen_expr(node.Inc))
         add(IR_JMP, x, -1)
-        add(IR_LABEL, y, -1)
+        label(y)
         return
     }
 
     if node.Ty == ND_RETURN {
         r := gen_expr(node.Expr)
         add(IR_RETURN, r, -1)
-        add(IR_KILL, r, -1)
+        kill(r)
         return
     }
 
     if node.Ty == ND_EXPR_STMT {
-        r := gen_expr(node.Expr)
-        add(IR_KILL, r, -1)
+        kill(gen_expr(node.Expr))
         return
     }
 
@@ -341,8 +347,8 @@ func Gen_ir(nodes *Vector) *Vector{
         // fn.Irに使用
         code = New_vec()
         // 各関数ごとにregsiter numとstacksizeを初期化している.
-        // regnoが1からはじまるのは、レジスタの配列Regsの0番目にrbpがあるから.
-        regno = 1
+        // nregが1からはじまるのは、レジスタの配列Regsの0番目にrbpがあるから.
+        nreg = 1
 
         if nodes.Len > 0 {
             add(IR_SAVE_ARGS, node.Args.Len, -1)
