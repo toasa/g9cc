@@ -101,7 +101,7 @@ func label(x int) {
 // cにおいて代入文の
 func gen_lval(node *Node) int {
 
-    if node.Ty != ND_LVAR {
+    if node.Op != ND_LVAR {
         Error(fmt.Sprintf("not lvalue: %d (%s)", node.Ty, node.Name))
     }
     var r int = nreg
@@ -125,7 +125,7 @@ func gen_binop(ty int, lhs *Node, rhs *Node) int {
 
 func gen_expr(node *Node) int {
 
-    switch node.Ty {
+    switch node.Op {
     case ND_NUM:
         r := nreg
         nreg++
@@ -201,6 +201,11 @@ func gen_expr(node *Node) int {
             kill(ir.Args[i])
         }
         return r
+    case ND_DEREF:
+        r := gen_expr(node.Expr)
+        // 間接参照(int型のポインタが指すメモリを参照する)のでload命令
+        add(IR_LOAD, r, r)
+        return r
     case '=':
         var rhs int = gen_expr(node.Rhs)
         // lhsはメモリへstoreするためのアドレスが格納されたレジスタ(の番号)が入っている
@@ -227,7 +232,7 @@ func gen_expr(node *Node) int {
 }
 
 func gen_stmt(node *Node) {
-    if node.Ty == ND_VARDEF {
+    if node.Op == ND_VARDEF {
 
         if node.Init == nil {
             return
@@ -247,7 +252,7 @@ func gen_stmt(node *Node) {
         return
     }
 
-    if node.Ty == ND_IF {
+    if node.Op == ND_IF {
 
         if Node2bool(node.Els) {
             // else文がある場合
@@ -282,7 +287,7 @@ func gen_stmt(node *Node) {
         return
     }
 
-    if node.Ty == ND_FOR {
+    if node.Op == ND_FOR {
         x := nlabel
         nlabel++
         y := nlabel
@@ -300,19 +305,19 @@ func gen_stmt(node *Node) {
         return
     }
 
-    if node.Ty == ND_RETURN {
+    if node.Op == ND_RETURN {
         r := gen_expr(node.Expr)
         add(IR_RETURN, r, -1)
         kill(r)
         return
     }
 
-    if node.Ty == ND_EXPR_STMT {
+    if node.Op == ND_EXPR_STMT {
         kill(gen_expr(node.Expr))
         return
     }
 
-    if node.Ty == ND_COMP_STMT {
+    if node.Op == ND_COMP_STMT {
         for i := 0; i < node.Stmts.Len; i++ {
             n, _ := node.Stmts.Data[i].(*Node)
             gen_stmt(n)
@@ -320,7 +325,7 @@ func gen_stmt(node *Node) {
         return
     }
 
-    Error(fmt.Sprintf("unknown node: %d", node.Ty))
+    Error(fmt.Sprintf("unknown node: %d", node.Op))
 }
 
 func Gen_ir(nodes *Vector) *Vector{
@@ -342,7 +347,7 @@ func Gen_ir(nodes *Vector) *Vector{
 
     for i := 0; i < nodes.Len; i++ {
         node := nodes.Data[i].(*Node)
-        Assert(node.Ty == ND_FUNC, "Type of root node is not ND_FUNC")
+        Assert(node.Op == ND_FUNC, "Type of root node is not ND_FUNC")
 
         // fn.Irに使用
         code = New_vec()

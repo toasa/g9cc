@@ -167,8 +167,46 @@ func gen(fn *Function) {
 func Gen_x86(fns *Vector) {
     fmt.Printf(".intel_syntax noprefix\n")
 
+    func_alloc()
+
     for i := 0; i < fns.Len; i++ {
         fn := fns.Data[i].(*Function)
         gen(fn)
     }
+}
+
+func func_alloc() {
+
+    // this is assembly language below C function(alloc),
+    // assembled in intel_syntax.
+
+    // **************************************
+    // int *alloc(int x) {
+    //     static int arr[1];
+    //     arr[0] = x;
+    //     return arr;
+    // }
+    // **************************************
+
+
+    fmt.Println(".globl _alloc")
+    // fmt.Println("    .p2align 4, 0x90")
+    fmt.Println("_alloc:")
+    // fmt.Println("    .cfi_startproc")
+    // fmt.Println("## %bb.0:")
+    fmt.Println("    push rbp")
+    // fmt.Println("    .cfi_def_cfa_offset 16")
+    // fmt.Println("    .cfi_offset rbp, -16")
+    fmt.Println("    mov rbp, rsp")
+    // fmt.Println("    .cfi_def_cfa_register rbp")
+    fmt.Println("    lea rax, [rip + _alloc.arr]")
+    fmt.Println("    mov dword ptr [rbp - 4], edi")
+    fmt.Println("    mov edi, dword ptr [rbp - 4]")
+    fmt.Println("    mov dword ptr [rip + _alloc.arr], edi")
+    fmt.Println("    pop rbp")
+    fmt.Println("    ret")
+    // fmt.Println("    .cfi_endproc")
+
+    fmt.Println(".zerofill __DATA,__bss,_alloc.arr,4,2")
+    //fmt.Println(".subsections_via_symbols")
 }

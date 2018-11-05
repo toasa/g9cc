@@ -10,30 +10,43 @@ import (
     "fmt"
 )
 
+var int_ty Type = Type{Ty: INT, Ptr_of: nil}
+
+type Var struct {
+    ty *Type
+    offset int
+}
+
 // 各識別子において、rbpからのoffsetを登録するための辞書
 var vars map[string]interface{}
 var stacksize int
 
 func walk(node *Node) {
-    switch node.Ty {
+    switch node.Op {
     case ND_NUM:
         return
     case ND_IDENT:
-        _, ok := vars[node.Name]
+        var_, ok := vars[node.Name].(*Var)
 
         if !ok {
             Error(fmt.Sprintf("undefined variable: %s", node.Name))
         }
-        node.Ty = ND_LVAR
-        node.Offset = vars[node.Name].(int)
+        node.Ty = var_.ty
+        node.Op = ND_LVAR
+        node.Offset = var_.offset
         return
     case ND_VARDEF:
         // varsに識別子の登録がされていない場合
         // 識別子をメモリ上へstoreしたり、メモリからloadする時のために、
         // base pointerからの距離を, map varsに格納しておく。
         stacksize += 8
-        vars[node.Name] = stacksize
         node.Offset = stacksize
+
+        var_ := new(Var)
+        var_.ty = node.Ty
+        var_.offset = stacksize
+        vars[node.Name] = var_
+
         if node.Init != nil {
             walk(node.Init)
         }
@@ -54,15 +67,16 @@ func walk(node *Node) {
     case '+', '-', '*', '/', '=', '<', ND_LOGAND, ND_LOGOR:
         walk(node.Lhs)
         walk(node.Rhs)
+        node.Ty = node.Lhs.Ty
         return
-    case ND_RETURN:
+    case ND_DEREF, ND_RETURN:
         walk(node.Expr)
         return
     case ND_CALL:
         for i := 0; i < node.Args.Len; i++ {
             walk(node.Args.Data[i].(*Node))
         }
-        // walk(node.Body)
+        node.Ty = &int_ty
         return
     case ND_FUNC:
         for i := 0; i < node.Args.Len; i++ {
@@ -86,7 +100,7 @@ func walk(node *Node) {
 func Sema(nodes *Vector) {
     for i := 0; i < nodes.Len; i++ {
         node := nodes.Data[i].(*Node)
-        Assert(node.Ty == ND_FUNC, "node type is not ND_FUNC")
+        Assert(node.Op == ND_FUNC, "node Op is not ND_FUNC")
 
         vars = make(map[string]interface{})
         stacksize = 0

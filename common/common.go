@@ -54,6 +54,7 @@ const (
     ND_LVAR // Variable reference
     ND_IF // "if"
     ND_FOR // "for"
+    ND_DEREF // pointer dereference
     ND_LOGAND // &&
     ND_LOGOR // ||
     ND_RETURN // "return"
@@ -63,8 +64,19 @@ const (
     ND_EXPR_STMT // Expression statement
 )
 
+const (
+    INT = iota
+    PTR
+)
+
+type Type struct {
+    Ty int
+    Ptr_of *Type
+}
+
 type Node struct {
-    Ty int // node type
+    Op int // Node type
+    Ty *Type // C type
     Lhs *Node // left-hand side
     Rhs *Node // right-hand side
     Val int // number literal

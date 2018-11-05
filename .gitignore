@@ -1,5 +1,6 @@
 *~
 *.o
+*.s
 tmp*
 9cc
 memo.txt

@@ -10,6 +10,15 @@ var tokens *Vector
 // "tokens.Data[]" array's index
 var pos int = 0
 
+var int_ty Type = Type{Ty: INT, Ptr_of: nil}
+
+func ptr_of(base *Type) *Type {
+    ty := new(Type)
+    ty.Ty = PTR
+    ty.Ptr_of = base
+    return ty
+}
+
 func expect(ty int) {
     t, _ := tokens.Data[pos].(*Token)
     if t.Ty != ty {
@@ -35,10 +44,9 @@ func is_typename() bool {
 
 func new_node(op int, lhs *Node, rhs *Node) *Node {
     n := new(Node) // new()関数でNode型のポインタを返す
-    n.Ty = op
+    n.Op = op
     n.Lhs = lhs
     n.Rhs = rhs
-
     return n
 }
 
@@ -55,7 +63,8 @@ func term() *Node {
     node := new(Node)
 
     if t.Ty == TK_NUM {
-        node.Ty = ND_NUM
+        node.Ty = &int_ty
+        node.Op = ND_NUM
         node.Val = t.Val
         return node
     }
@@ -66,12 +75,12 @@ func term() *Node {
         if !consume('(') {
             // 識別子
             // '('の場合関数呼び出しとみなされ、pos++となり、このif文の条件はfalseとなる
-            node.Ty = ND_IDENT
+            node.Op = ND_IDENT
             return node
         }
 
         // 関数呼び出し
-        node.Ty = ND_CALL
+        node.Op = ND_CALL
         node.Args = New_vec()
         if consume(')') {
             // 関数に引数がない場合
@@ -92,8 +101,19 @@ func term() *Node {
     return err
 }
 
+func unary() *Node {
+    if consume('*') {
+        node := new(Node)
+        node.Op = ND_DEREF
+        node.Expr = mul()
+        return node
+    }
+
+    return term()
+}
+
 func mul() *Node {
-    var lhs *Node = term()
+    var lhs *Node = unary()
 
     for true {
         t := tokens.Data[pos].(*Token)
@@ -103,7 +123,7 @@ func mul() *Node {
         }
         // t.Tyが * または　/ の場合
         pos++
-        lhs = new_node(t.Ty, lhs, term())
+        lhs = new_node(t.Ty, lhs, unary())
     }
 
     // ここには通常到達しない
@@ -203,10 +223,25 @@ func assign() *Node {
     return lhs
 }
 
+// typeは予約語ゆえ
+func type_() *Type {
+    t := tokens.Data[pos].(*Token)
+    if t.Ty != TK_INT {
+        Error(fmt.Sprintf("typename expected, but got %s", t.Input))
+    }
+    pos++
+
+    ty := &int_ty
+    for consume('*') {
+        ty = ptr_of(ty)
+    }
+    return ty
+}
+
 func decl() *Node {
     node := new(Node)
-    node.Ty = ND_VARDEF
-    pos++
+    node.Op = ND_VARDEF
+    node.Ty = type_()
 
     t := tokens.Data[pos].(*Token)
     if t.Ty != TK_IDENT {
@@ -224,8 +259,8 @@ func decl() *Node {
 
 func param() *Node {
     node := new(Node)
-    node.Ty = ND_VARDEF
-    pos++
+    node.Op = ND_VARDEF
+    node.Ty = type_()
 
     t := tokens.Data[pos].(*Token)
     if t.Ty != TK_IDENT {
@@ -238,7 +273,7 @@ func param() *Node {
 
 func expr_stmt() *Node {
     node := new(Node)
-    node.Ty = ND_EXPR_STMT
+    node.Op = ND_EXPR_STMT
     node.Expr = assign()
     expect(';')
     return node
@@ -253,7 +288,7 @@ func stmt() *Node {
         return decl()
     case TK_IF:
         pos++
-        node.Ty = ND_IF
+        node.Op = ND_IF
         expect('(')
         node.Cond = assign()
         expect(')')
@@ -266,7 +301,7 @@ func stmt() *Node {
         return node
     case TK_FOR:
         pos++
-        node.Ty = ND_FOR
+        node.Op = ND_FOR
         expect('(')
         // node.Init = assign()
         // expect(';')
@@ -283,22 +318,19 @@ func stmt() *Node {
         return node
     case TK_RETURN:
         pos++
-        node.Ty = ND_RETURN
+        node.Op = ND_RETURN
         node.Expr = assign()
         expect(';')
         return node
     case '{':
         pos++
-        node.Ty = ND_COMP_STMT
+        node.Op = ND_COMP_STMT
         node.Stmts = New_vec()
         for !consume('}') {
             Vec_push(node.Stmts, stmt())
         }
         return node
     default:
-        // node.Ty = ND_EXPR_STMT
-        // node.Expr = assign()
-        // expect(';')
         return expr_stmt()
     }
 
@@ -309,7 +341,7 @@ func stmt() *Node {
 func compound_stmt() *Node {
     // ASTのroot node
     node := new(Node)
-    node.Ty = ND_COMP_STMT
+    node.Op = ND_COMP_STMT
     node.Stmts = New_vec()
 
     for !consume('}') {
@@ -323,7 +355,7 @@ func compound_stmt() *Node {
 
 func function() *Node {
     node := new(Node)
-    node.Ty = ND_FUNC
+    node.Op = ND_FUNC
     node.Args = New_vec()
 
     t := tokens.Data[pos].(*Token)

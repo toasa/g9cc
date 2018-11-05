@@ -18,7 +18,7 @@ try() {
     fi
 }
 
-try 1 'int main() { return 1; }'
+try 33 'int main() { return 33; }'
 try 10 'int main() { return 2*3+4; }'
 try 14 'int main() { return 2+3*4; }'
 try 26 'int main() { return 2*3+4*5; } '
@@ -58,5 +58,7 @@ try 0 'int main() { return 1>1; }'
 
 try 60 'int main() {int sum=0; int i; for (i=10; i<15; i=i+1) sum = sum + i; return sum; }'
 try 89 'int main() {int i=1; int j=1; for (int k=0; k<10; k=k+1) {int m=i+j; i=j; j=m; } return i; }'
+
+try 42 'int main() { int *p = alloc(42); return *p; }'
 
 echo OK
