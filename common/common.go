@@ -50,7 +50,8 @@ type Token struct {
 const (
     ND_NUM = iota + 256 // number literal
     ND_IDENT // identifier
-    ND_VARDEF // "Variable definition"
+    ND_VARDEF // Variable definition
+    ND_LVAR // Variable reference
     ND_IF // "if"
     ND_FOR // "for"
     ND_LOGAND // &&
@@ -81,6 +82,12 @@ type Node struct {
     Init *Node
     Inc *Node
     Body *Node
+
+    // Function definition
+    Stacksize int
+
+    // Local variable
+    Offset int
 
     // Function call
     Args *Vector

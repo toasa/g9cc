@@ -30,6 +30,7 @@ import (
     . "g9cc/util"
     "g9cc/token"
     "g9cc/parse"
+    "g9cc/sema"
     "g9cc/gen_ir"
     "g9cc/regalloc"
     "g9cc/gen_x86"
@@ -66,10 +67,12 @@ func main() {
     var tokens *Vector = token.Tokenize(input + "\000")
     // PrintVector(tokens)
 
-    var node *Vector = parse.Parse(tokens)
+    var nodes *Vector = parse.Parse(tokens)
     // PrintVector(node)
 
-    var fns *Vector = ir.Gen_ir(node)
+    sema.Sema(nodes)
+
+    var fns *Vector = ir.Gen_ir(nodes)
     if dump_ir1 {
         ir.Dump_ir(fns)
     }

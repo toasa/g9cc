@@ -222,6 +222,20 @@ func decl() *Node {
     return node
 }
 
+func param() *Node {
+    node := new(Node)
+    node.Ty = ND_VARDEF
+    pos++
+
+    t := tokens.Data[pos].(*Token)
+    if t.Ty != TK_IDENT {
+        Error(fmt.Sprintf("parameter name expected, but got %s", t.Input))
+    }
+    node.Name = t.Name
+    pos++
+    return node
+}
+
 func expr_stmt() *Node {
     node := new(Node)
     node.Ty = ND_EXPR_STMT
@@ -329,9 +343,9 @@ func function() *Node {
     expect('(')
     if !consume(')') {
         // 引数が存在した場合
-        Vec_push(node.Args, term())
+        Vec_push(node.Args, param())
         for consume(',') {
-            Vec_push(node.Args, term())
+            Vec_push(node.Args, param())
         }
         expect(')')
     }
