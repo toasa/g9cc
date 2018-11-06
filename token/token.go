@@ -28,7 +28,7 @@ var symbols = []struct {
     {"&&", TK_LOGAND}, {"||", TK_LOGOR}, {"NULL", 0},
 }
 
-func scan(s string) *Vector {
+func Tokenize(s string) *Vector {
     var v *Vector = New_vec()
 
     // index of input
@@ -107,17 +107,6 @@ func scan(s string) *Vector {
 
     add_token(v, TK_EOF, s);
     return v
-}
-
-func Tokenize(s string) *Vector {
-
-    // 自作のmapではなく, Go付属のmapを使用
-    // keywords = make(map[string]interface{})
-    // keywords["return"] = TK_RETURN
-    // keywords["if"] = TK_IF
-    // keywords["else"] = TK_ELSE
-
-    return scan(s)
 }
 
 func isdigit(c uint8) bool {
