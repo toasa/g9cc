@@ -21,6 +21,12 @@ type Var struct {
 var vars map[string]interface{}
 var stacksize int
 
+func swap(p **Node, q **Node) {
+    var r *Node = *p
+    *p = *q
+    *q = r
+}
+
 func walk(node *Node) {
     switch node.Op {
     case ND_NUM:
@@ -64,12 +70,32 @@ func walk(node *Node) {
         walk(node.Inc)
         walk(node.Body)
         return
-    case '+', '-', '*', '/', '=', '<', ND_LOGAND, ND_LOGOR:
+    case '+', '-':
+        walk(node.Lhs)
+        walk(node.Rhs)
+
+        if node.Rhs.Ty.Ty == PTR {
+            swap(&node.Lhs, &node.Rhs)
+        }
+        if node.Rhs.Ty.Ty == PTR {
+            Error(fmt.Sprintf("pointer %c pointer is not defined", node.Op))
+        }
+
+        node.Ty = node.Lhs.Ty
+        return
+    case '*', '/', '=', '<', ND_LOGAND, ND_LOGOR:
         walk(node.Lhs)
         walk(node.Rhs)
         node.Ty = node.Lhs.Ty
         return
-    case ND_DEREF, ND_RETURN:
+    case ND_DEREF:
+        walk(node.Expr)
+        if node.Expr.Ty.Ty != PTR {
+            Error("operand must be a pointer")
+        }
+        node.Ty = node.Expr.Ty.Ptr_of
+        return
+    case ND_RETURN:
         walk(node.Expr)
         return
     case ND_CALL:

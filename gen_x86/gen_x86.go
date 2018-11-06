@@ -177,36 +177,86 @@ func Gen_x86(fns *Vector) {
 
 func func_alloc() {
 
-    // this is assembly language below C function(alloc),
+    // this is assembly language below C functions,
     // assembled in intel_syntax.
 
     // **************************************
-    // int *alloc(int x) {
-    //     static int arr[1];
+    //
+    // int *alloc1(int x, int y) {
+    //     static int arr[2];
     //     arr[0] = x;
+    //     arr[1] = y;
     //     return arr;
     // }
+    //
+    // int *alloc2(int x, int y) {
+    //     static int arr[2];
+    //     arr[0] = x;
+    //     arr[1] = y;
+    //     return arr + 1;
+    // }
+    //
+    // int **alloc_ptr_ptr(int x) {
+    //     static int **p;
+    //     static int *q;
+    //     static int r;
+    //     r = x;
+    //     q = &r;
+    //     p = &q;
+    //     return p;
+    // }
+    //
     // **************************************
 
 
-    fmt.Println(".globl _alloc")
-    // fmt.Println("    .p2align 4, 0x90")
-    fmt.Println("_alloc:")
-    // fmt.Println("    .cfi_startproc")
-    // fmt.Println("## %bb.0:")
+    fmt.Println(".globl	_alloc1")
+    fmt.Println("_alloc1:")
     fmt.Println("    push rbp")
-    // fmt.Println("    .cfi_def_cfa_offset 16")
-    // fmt.Println("    .cfi_offset rbp, -16")
     fmt.Println("    mov rbp, rsp")
-    // fmt.Println("    .cfi_def_cfa_register rbp")
-    fmt.Println("    lea rax, [rip + _alloc.arr]")
+    fmt.Println("    lea rax, [rip + _alloc1.arr]")
     fmt.Println("    mov dword ptr [rbp - 4], edi")
-    fmt.Println("    mov edi, dword ptr [rbp - 4]")
-    fmt.Println("    mov dword ptr [rip + _alloc.arr], edi")
+    fmt.Println("    mov dword ptr [rbp - 8], esi")
+    fmt.Println("    mov esi, dword ptr [rbp - 4]")
+    fmt.Println("    mov dword ptr [rip + _alloc1.arr], esi")
+    fmt.Println("    mov esi, dword ptr [rbp - 8]")
+    fmt.Println("    mov dword ptr [rip + _alloc1.arr+4], esi")
     fmt.Println("    pop rbp")
     fmt.Println("    ret")
-    // fmt.Println("    .cfi_endproc")
+    fmt.Println("")
+    fmt.Println(".globl	_alloc2")
+    fmt.Println("_alloc2:")
+    fmt.Println("    push rbp")
+    fmt.Println("    mov rbp, rsp")
+    fmt.Println("    lea rax, [rip + _alloc2.arr]")
+    fmt.Println("    add rax, 4")
+    fmt.Println("    mov dword ptr [rbp - 4], edi")
+    fmt.Println("    mov dword ptr [rbp - 8], esi")
+    fmt.Println("    mov esi, dword ptr [rbp - 4]")
+    fmt.Println("    mov dword ptr [rip + _alloc2.arr], esi")
+    fmt.Println("    mov esi, dword ptr [rbp - 8]")
+    fmt.Println("    mov dword ptr [rip + _alloc2.arr+4], esi")
+    fmt.Println("    pop rbp")
+    fmt.Println("    ret")
+    fmt.Println("")
+    fmt.Println(".globl	_alloc_ptr_ptr")
+    fmt.Println("_alloc_ptr_ptr:")
+    fmt.Println("    push rbp")
+    fmt.Println("    mov rbp, rsp")
+    fmt.Println("    lea rax, [rip + _alloc_ptr_ptr.q]")
+    fmt.Println("    lea rcx, [rip + _alloc_ptr_ptr.r]")
+    fmt.Println("    mov dword ptr [rbp - 4], edi")
+    fmt.Println("    mov edi, dword ptr [rbp - 4]")
+    fmt.Println("    mov dword ptr [rip + _alloc_ptr_ptr.r], edi")
+    fmt.Println("    mov qword ptr [rip + _alloc_ptr_ptr.q], rcx")
+    fmt.Println("    mov qword ptr [rip + _alloc_ptr_ptr.p], rax")
+    fmt.Println("    mov rax, qword ptr [rip + _alloc_ptr_ptr.p]")
+    fmt.Println("    pop rbp")
+    fmt.Println("    ret")
+    fmt.Println("")
+    fmt.Println("    .zerofill __DATA,__bss,_alloc1.arr,8,2  ## @alloc1.arr")
+    fmt.Println("    .zerofill __DATA,__bss,_alloc2.arr,8,2  ## @alloc2.arr")
+    fmt.Println("    .zerofill __DATA,__bss,_alloc_ptr_ptr.p,8,3 ## @alloc_ptr_ptr.p")
+    fmt.Println("    .zerofill __DATA,__bss,_alloc_ptr_ptr.q,8,3 ## @alloc_ptr_ptr.q")
+    fmt.Println("    .zerofill __DATA,__bss,_alloc_ptr_ptr.r,4,2 ## @alloc_ptr_ptr.r")
 
-    fmt.Println(".zerofill __DATA,__bss,_alloc.arr,4,2")
-    //fmt.Println(".subsections_via_symbols")
 }

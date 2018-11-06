@@ -124,7 +124,6 @@ func gen_binop(ty int, lhs *Node, rhs *Node) int {
 }
 
 func gen_expr(node *Node) int {
-
     switch node.Op {
     case ND_NUM:
         r := nreg
@@ -213,10 +212,34 @@ func gen_expr(node *Node) int {
         add(IR_STORE, lhs, rhs)
         kill(rhs)
         return lhs
-    case '+':
-        return gen_binop(IR_ADD, node.Lhs, node.Rhs)
-    case '-':
-        return gen_binop(IR_SUB, node.Lhs, node.Rhs)
+    case '+', '-':
+        var insn int
+        // Goには三項演算子がない
+        if node.Op == '+' {
+            insn = IR_ADD
+        } else {
+            insn = IR_SUB
+        }
+
+        if node.Lhs.Ty.Ty != PTR {
+            return gen_binop(insn, node.Lhs, node.Rhs)
+        }
+
+        rhs := gen_expr(node.Rhs)
+
+        r := nreg
+        nreg++
+
+        add(IR_IMM, r, Size_of(node.Lhs.Ty.Ptr_of))
+        add(IR_MUL, rhs, r)
+        kill(r)
+
+        lhs := gen_expr(node.Lhs)
+
+        add(insn, lhs, rhs)
+        kill(rhs)
+
+        return lhs
     case '*':
         return gen_binop(IR_MUL, node.Lhs, node.Rhs)
     case '/':
@@ -344,7 +367,6 @@ func Gen_ir(nodes *Vector) *Vector{
     // |
     // |
 
-
     for i := 0; i < nodes.Len; i++ {
         node := nodes.Data[i].(*Node)
         Assert(node.Op == ND_FUNC, "Type of root node is not ND_FUNC")
@@ -358,6 +380,7 @@ func Gen_ir(nodes *Vector) *Vector{
         if nodes.Len > 0 {
             add(IR_SAVE_ARGS, node.Args.Len, -1)
         }
+
         gen_stmt(node.Body)
 
         fn := new(Function)

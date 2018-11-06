@@ -80,15 +80,8 @@ func scan(s string) *Vector {
                     i = len + i_input
                 }
 
-                // nameがmap keywordsに登録されていない場合, 識別子(identifier)とみなされる
-                // ty, _ := keywords[name].(int)
-                //
-                // if ty == 0 {
-                //     ty = TK_IDENT
-                // }
+                t := add_token(v, TK_IDENT, s[i_input:len + i_input])
 
-                t := add_token(v, TK_IDENT, s)
-                //var name string = s[i_input:len + i_input]
                 t.Name = s[i_input:len + i_input]
                 i_input += len
                 continue

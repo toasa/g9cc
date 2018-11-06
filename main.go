@@ -73,6 +73,7 @@ func main() {
     sema.Sema(nodes)
 
     var fns *Vector = ir.Gen_ir(nodes)
+
     if dump_ir1 {
         ir.Dump_ir(fns)
     }

@@ -45,6 +45,13 @@ func Format(fmts ...string) string {
     return str
 }
 
+func Size_of(ty *Type) int {
+    if ty.Ty == INT {
+        return 4
+    }
+    Assert(ty.Ty == PTR, "ty.Ty is not PTR")
+    return 8
+}
 
 // Vector
 
