@@ -94,7 +94,7 @@ func term() *Node {
     return err
 }
 
-// 識別子の先頭につく'*'を読み取る
+// 識別子の先頭につく'*' or '&'を読み取る
 func unary() *Node {
     if consume('*') {
         node := new(Node)

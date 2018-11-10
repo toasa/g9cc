@@ -43,10 +43,10 @@ func addr_of(base *Node, ty *Type) *Node {
 }
 
 // ASTを渡り歩く
-func walk(node *Node, decay bool) {
+func walk(node *Node, decay bool) *Node {
     switch node.Op {
     case ND_NUM:
-        return
+        return node
     case ND_IDENT:
         var_, ok := vars[node.Name].(*Var)
 
@@ -58,11 +58,11 @@ func walk(node *Node, decay bool) {
         node.Offset = var_.offset
 
         if decay && (var_.ty.Ty == ARY) {
-            *node = *addr_of(node, var_.ty.Ary_of)
-        } else {
-            node.Ty = var_.ty
+            return addr_of(node, var_.ty.Ary_of)
         }
-        return
+
+        node.Ty = var_.ty
+        return node
     case ND_VARDEF:
         // varsに識別子の登録がされていない場合
         // 識別子をメモリ上へstoreしたり、メモリからloadする時のために、
@@ -76,25 +76,25 @@ func walk(node *Node, decay bool) {
         vars[node.Name] = var_
 
         if node.Init != nil {
-            walk(node.Init, true)
+            node.Init = walk(node.Init, true)
         }
-        return
+        return node
     case ND_IF:
-        walk(node.Cond, true)
-        walk(node.Then, true)
+        node.Cond = walk(node.Cond, true)
+        node.Then = walk(node.Then, true)
         if node.Els != nil {
-            walk(node.Els, true)
+            node.Els = walk(node.Els, true)
         }
-        return
+        return node
     case ND_FOR:
-        walk(node.Init, true)
-        walk(node.Cond, true)
-        walk(node.Inc, true)
-        walk(node.Body, true)
-        return
+        node.Init = walk(node.Init, true)
+        node.Cond = walk(node.Cond, true)
+        node.Inc = walk(node.Inc, true)
+        node.Body = walk(node.Body, true)
+        return node
     case '+', '-':
-        walk(node.Lhs, true)
-        walk(node.Rhs, true)
+        node.Lhs = walk(node.Lhs, true)
+        node.Rhs = walk(node.Rhs, true)
 
         if node.Rhs.Ty.Ty == PTR {
             swap(&node.Lhs, &node.Rhs)
@@ -104,54 +104,57 @@ func walk(node *Node, decay bool) {
         }
 
         node.Ty = node.Lhs.Ty
-        return
+        return node
     case '=':
-        walk(node.Lhs, false)
-        walk(node.Rhs, true)
+        node.Lhs = walk(node.Lhs, false)
+        node.Rhs = walk(node.Rhs, true)
         node.Ty = node.Lhs.Ty
-        return
+        return node
     case '*', '/', '<', ND_LOGAND, ND_LOGOR:
-        walk(node.Lhs, true)
-        walk(node.Rhs, true)
+        node.Lhs = walk(node.Lhs, true)
+        node.Rhs = walk(node.Rhs, true)
         node.Ty = node.Lhs.Ty
-        return
+        return node
     case ND_ADDR:
-        walk(node.Expr, true)
+        node.Expr = walk(node.Expr, true)
         node.Ty = Ptr_of(node.Expr.Ty)
-        return
+        return node
     case ND_DEREF:
-        walk(node.Expr, true)
+        node.Expr = walk(node.Expr, true)
         if node.Expr.Ty.Ty != PTR {
             Error("operand must be a pointer")
         }
         node.Ty = node.Expr.Ty.Ptr_of
-        return
+        return node
     case ND_RETURN:
-        walk(node.Expr, true)
-        return
+        node.Expr = walk(node.Expr, true)
+        return node
     case ND_CALL:
         for i := 0; i < node.Args.Len; i++ {
-            walk(node.Args.Data[i].(*Node), true)
+            node.Args.Data[i] = walk(node.Args.Data[i].(*Node), true)
         }
         node.Ty = &int_ty
-        return
+        return node
     case ND_FUNC:
         for i := 0; i < node.Args.Len; i++ {
-            walk(node.Args.Data[i].(*Node), true)
+            node.Args.Data[i] = walk(node.Args.Data[i].(*Node), true)
         }
-        walk(node.Body, true)
-        return
+        node.Body = walk(node.Body, true)
+        return node
     case ND_COMP_STMT:
         for i := 0; i < node.Stmts.Len; i++ {
-            walk(node.Stmts.Data[i].(*Node), true)
+            node.Stmts.Data[i] = walk(node.Stmts.Data[i].(*Node), true)
         }
-        return
+        return node
     case ND_EXPR_STMT:
-        walk(node.Expr, true)
-        return
+        node.Expr = walk(node.Expr, true)
+        return node
     default:
         Assert(false, "unknown node type")
     }
+
+    err := new(Node)
+    return err
 }
 
 func Sema(nodes *Vector) {
