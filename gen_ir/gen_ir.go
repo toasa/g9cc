@@ -26,8 +26,12 @@ var Irinfo_arr []IRInfo = []IRInfo{
     {"LT", IR_TY_REG_REG},
     {"JMP", IR_TY_JMP},
     {"UNLESS", IR_TY_REG_LABEL},
-    {"LOAD", IR_TY_REG_REG},
-    {"STORE", IR_TY_REG_REG},
+    {"LOAD32", IR_TY_REG_REG},
+    {"LOAD64", IR_TY_REG_REG},
+    {"STORE32", IR_TY_REG_REG},
+    {"STORE64", IR_TY_REG_REG},
+    {"STORE32_ARG", IR_TY_IMM_IMM},
+    {"STORE64_ARG", IR_TY_IMM_IMM},
     {"KILL", IR_TY_REG},
     {"SAVE_ARGS", IR_TY_IMM},
     {"NOP", IR_TY_NOARG},
@@ -48,6 +52,8 @@ func tostr(ir *IR) string {
         return fmt.Sprintf("  %s r%d, r%d", info.Name, ir.Lhs, ir.Rhs)
     case IR_TY_REG_IMM:
         return fmt.Sprintf("  %s r%d, %d", info.Name, ir.Lhs, ir.Rhs)
+    case IR_TY_IMM_IMM:
+        return fmt.Sprintf("  %s %d, %d", info.Name, ir.Lhs, ir.Rhs)
     case IR_TY_REG_LABEL:
         return fmt.Sprintf("  %s r%d, .L%d", info.Name, ir.Lhs, ir.Rhs)
     case IR_TY_CALL:
@@ -98,21 +104,24 @@ func label(x int) {
     add(IR_LABEL, x, -1)
 }
 
-// cにおいて代入文の
 func gen_lval(node *Node) int {
 
-    if node.Op != ND_LVAR {
-        Error(fmt.Sprintf("not lvalue: %d (%s)", node.Ty, node.Name))
+    if node.Op == ND_DEREF {
+        return gen_expr(node.Expr)
     }
-    var r int = nreg
-    nreg++
+    if node.Op == ND_LVAR {
+        r := nreg
+        nreg++
+        // r(現在の汎用レジスタ)にrbpを代入する
+        add(IR_MOV, r, 0)
+        // r(現在はrbpの値)からoffset(メモリ上にある識別子が, [rbp]からどれほど離れているか)
+        // だけ減算する
+        add(IR_SUB_IMM, r, node.Offset)
+        return r
+    }
 
-    // r(現在の汎用レジスタ)にrbpを代入する
-    add(IR_MOV, r, 0)
-    // r(現在はrbpの値)からoffset(メモリ上にある識別子が, [rbp]からどれほど離れているか)
-    // だけ減算する
-    add(IR_SUB_IMM, r, node.Offset)
-    return r
+    Error(fmt.Sprintf("not an lvalue: %d (%s)", node.Op, node.Name))
+    return -1 // error value
 }
 
 func gen_binop(ty int, lhs *Node, rhs *Node) int {
@@ -178,7 +187,11 @@ func gen_expr(node *Node) int {
         return r1
     case ND_LVAR:
         var r int = gen_lval(node)
-        add(IR_LOAD, r, r)
+        if node.Ty.Ty == PTR {
+            add(IR_LOAD64, r, r)
+        } else {
+            add(IR_LOAD32, r, r)
+        }
         return r
     case ND_CALL:
         var args [6]int
@@ -200,16 +213,23 @@ func gen_expr(node *Node) int {
             kill(ir.Args[i])
         }
         return r
+    case ND_ADDR:
+        return gen_lval(node.Expr)
     case ND_DEREF:
         r := gen_expr(node.Expr)
         // 間接参照(int型のポインタが指すメモリを参照する)のでload命令
-        add(IR_LOAD, r, r)
+        add(IR_LOAD64, r, r)
         return r
     case '=':
         var rhs int = gen_expr(node.Rhs)
         // lhsはメモリへstoreするためのアドレスが格納されたレジスタ(の番号)が入っている
         var lhs int = gen_lval(node.Lhs)
-        add(IR_STORE, lhs, rhs)
+        if node.Lhs.Ty.Ty == PTR {
+            add(IR_STORE64, lhs, rhs)
+        } else {
+            add(IR_STORE32, lhs, rhs)
+        }
+
         kill(rhs)
         return lhs
     case '+', '-':
@@ -269,7 +289,12 @@ func gen_stmt(node *Node) {
         // ベースレジスタから、変数のオフセット分引く
         add(IR_SUB_IMM, lhs, node.Offset)
         // メモリ上のスタックで、左辺値(lhs)に対し、右辺値(rhs)を代入する
-        add(IR_STORE, lhs, rhs)
+        if node.Ty.Ty == PTR {
+            add(IR_STORE64, lhs, rhs)
+        } else {
+            add(IR_STORE32, lhs, rhs)
+        }
+
         kill(lhs)
         kill(rhs)
         return
@@ -377,8 +402,16 @@ func Gen_ir(nodes *Vector) *Vector{
         // nregが1からはじまるのは、レジスタの配列Regsの0番目にrbpがあるから.
         nreg = 1
 
-        if nodes.Len > 0 {
-            add(IR_SAVE_ARGS, node.Args.Len, -1)
+        for i := 0; i < node.Args.Len; i++ {
+            arg := node.Args.Data[i].(*Node)
+
+            var op int
+            if arg.Ty.Ty == PTR {
+                op = IR_STORE64_ARG
+            } else {
+                op = IR_STORE32_ARG
+            }
+            add(op, arg.Offset, i)
         }
 
         gen_stmt(node.Body)

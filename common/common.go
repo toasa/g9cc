@@ -21,6 +21,13 @@ type StringBuilder struct {
     Len int
 }
 
+type Type struct {
+    Ty int
+    Ptr_of *Type // Pointer
+    Ary_of *Type // Array
+    Len int
+}
+
 // token.go
 
 const (
@@ -54,7 +61,8 @@ const (
     ND_LVAR // Variable reference
     ND_IF // "if"
     ND_FOR // "for"
-    ND_DEREF // pointer dereference
+    ND_ADDR // address operator ("&")
+    ND_DEREF // pointer dereference ("*")
     ND_LOGAND // &&
     ND_LOGOR // ||
     ND_RETURN // "return"
@@ -67,12 +75,8 @@ const (
 const (
     INT = iota
     PTR
+    ARY
 )
-
-type Type struct {
-    Ty int
-    Ptr_of *Type
-}
 
 type Node struct {
     Op int // Node type
@@ -122,10 +126,13 @@ const (
     IR_LT
     IR_JMP
     IR_UNLESS
-    IR_LOAD
-    IR_STORE
+    IR_LOAD32
+    IR_LOAD64
+    IR_STORE32
+    IR_STORE64
+    IR_STORE32_ARG
+    IR_STORE64_ARG
     IR_KILL
-    IR_SAVE_ARGS
     IR_NOP
 )
 
@@ -148,6 +155,7 @@ const (
     IR_TY_LABEL
     IR_TY_REG_REG
     IR_TY_REG_IMM
+    IR_TY_IMM_IMM
     IR_TY_REG_LABEL
     IR_TY_CALL
 )

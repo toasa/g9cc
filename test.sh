@@ -18,6 +18,8 @@ try() {
     fi
 }
 
+try 3 'int main() { int ary[2]; *ary=1; *(ary+1)=2; return *ary + *(ary+1); }'
+
 try 33 'int main() { return 33; }'
 try 10 'int main() { return 2*3+4; }'
 try 14 'int main() { return 2+3*4; }'

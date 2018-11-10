@@ -45,14 +45,6 @@ func Format(fmts ...string) string {
     return str
 }
 
-func Size_of(ty *Type) int {
-    if ty.Ty == INT {
-        return 4
-    }
-    Assert(ty.Ty == PTR, "ty.Ty is not PTR")
-    return 8
-}
-
 // Vector
 
 func New_vec() *Vector {
@@ -166,4 +158,30 @@ func Sb_get(sb *StringBuilder) string {
     Sb_grow(sb, 1)
     //sb.Data[sb.Len] = '\000'
     return sb.Data
+}
+
+func Ptr_of(base *Type) *Type {
+    ty := new(Type)
+    ty.Ty = PTR
+    ty.Ptr_of = base
+    return ty
+}
+
+func Ary_of(base *Type, len_ int) *Type{
+    ty := new(Type)
+    ty.Ty = ARY
+    ty.Ary_of = base
+    ty.Len = len_
+    return ty
+}
+
+func Size_of(ty *Type) int {
+    if ty.Ty == INT {
+        return 4
+    }
+    if ty.Ty == ARY {
+        return Size_of(ty.Ary_of) * ty.Len
+    }
+    Assert(ty.Ty == PTR, "ty.Ty is not PTR")
+    return 8
 }

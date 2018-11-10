@@ -10,14 +10,7 @@ var tokens *Vector
 // "tokens.Data[]" array's index
 var pos int = 0
 
-var int_ty Type = Type{Ty: INT, Ptr_of: nil}
-
-func ptr_of(base *Type) *Type {
-    ty := new(Type)
-    ty.Ty = PTR
-    ty.Ptr_of = base
-    return ty
-}
+var int_ty Type = Type{Ty: INT, Ptr_of: nil, Ary_of: nil, Len: 0}
 
 func expect(ty int) {
     t, _ := tokens.Data[pos].(*Token)
@@ -101,6 +94,7 @@ func term() *Node {
     return err
 }
 
+// 識別子の先頭につく'*'を読み取る
 func unary() *Node {
     if consume('*') {
         node := new(Node)
@@ -132,16 +126,6 @@ func mul() *Node {
 }
 
 func add() *Node {
-
-    // この文はすごい
-    // 2 * 3 + 4, 2 + 3 * 4 から以下の構文木を作成した
-    // 正しく、掛け算が優先されている
-    //
-    //       ---(+)---        ---(+)---
-    //       |       |        |       |
-    //    --(*)--    4        2    --(*)--
-    //    |     |                  |     |
-    //    2     3                  3     4
 
     var lhs *Node = mul()
 
@@ -213,6 +197,7 @@ func logor() *Node {
     return err
 }
 
+// '='を処理する
 func assign() *Node {
     lhs := logor()
     if consume('=') {
@@ -224,6 +209,7 @@ func assign() *Node {
 }
 
 // typeは予約語ゆえ
+// 型宣言を読み取る. ex. int a, int **b,...
 func type_() *Type {
     t := tokens.Data[pos].(*Token)
     if t.Ty != TK_INT {
@@ -233,7 +219,7 @@ func type_() *Type {
 
     ty := &int_ty
     for consume('*') {
-        ty = ptr_of(ty)
+        ty = Ptr_of(ty)
     }
     return ty
 }
@@ -241,8 +227,11 @@ func type_() *Type {
 func decl() *Node {
     node := new(Node)
     node.Op = ND_VARDEF
+
+    // Read the first half of type name (e.g. `int *`)
     node.Ty = type_()
 
+    // Read an indentifier
     t := tokens.Data[pos].(*Token)
     if t.Ty != TK_IDENT {
         Error(fmt.Sprintf("variable name expected, but got %s", t.Input))
@@ -250,10 +239,27 @@ func decl() *Node {
     node.Name = t.Name
     pos++
 
+    // Read the second half of type name (e.g. `[3][5]`)
+    ary_size := New_vec()
+    for consume('[') {
+        len_ := term()
+        if len_.Op != ND_NUM {
+            Error("number expected")
+        }
+        Vec_push(ary_size, len_)
+        expect(']')
+    }
+    for i := ary_size.Len - 1; i >= 0; i-- {
+        len_ := ary_size.Data[i].(*Node)
+        node.Ty = Ary_of(node.Ty, len_.Val)
+    }
+
+    // Read an initializer
     if consume('=') {
         node.Init = assign()
     }
     expect(';')
+
     return node
 }
 
@@ -331,6 +337,7 @@ func stmt() *Node {
         }
         return node
     default:
+        // 式文
         return expr_stmt()
     }
 
@@ -382,6 +389,7 @@ func function() *Node {
         }
         expect(')')
     }
+
     expect('{')
     node.Body = compound_stmt()
     return node
