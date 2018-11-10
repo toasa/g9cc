@@ -102,11 +102,16 @@ func unary() *Node {
         node.Expr = mul()
         return node
     }
-
     if consume('&') {
         node := new(Node)
         node.Op = ND_ADDR
         node.Expr = mul()
+        return node
+    }
+    if consume(TK_SIZEOF) {
+        node := new(Node)
+        node.Op = ND_SIZEOF
+        node.Expr = unary()
         return node
     }
 

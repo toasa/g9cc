@@ -129,6 +129,14 @@ func walk(node *Node, decay bool) *Node {
     case ND_RETURN:
         node.Expr = walk(node.Expr, true)
         return node
+    case ND_SIZEOF:
+        expr := walk(node.Expr, false)
+
+        ret := new(Node)
+        ret.Op = ND_NUM
+        ret.Ty = &Type{Ty: INT, Ptr_of: nil, Ary_of: nil, Len: 0}
+        ret.Val = Size_of(expr.Ty)
+        return ret
     case ND_CALL:
         for i := 0; i < node.Args.Len; i++ {
             node.Args.Data[i] = walk(node.Args.Data[i].(*Node), true)

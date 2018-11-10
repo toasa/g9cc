@@ -40,6 +40,7 @@ const (
     TK_LOGOR // ||
     TK_LOGAND // &&
     TK_RETURN // "return"
+    TK_SIZEOF // "sizeof"
     TK_EOF
 )
 
@@ -66,6 +67,7 @@ const (
     ND_LOGAND // &&
     ND_LOGOR // ||
     ND_RETURN // "return"
+    ND_SIZEOF // "sizeof"
     ND_CALL // Function call
     ND_FUNC // Function definition
     ND_COMP_STMT // Compound statement
