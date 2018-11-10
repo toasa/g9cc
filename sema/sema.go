@@ -107,6 +107,9 @@ func walk(node *Node, decay bool) *Node {
         return node
     case '=':
         node.Lhs = walk(node.Lhs, false)
+        if !(node.Lhs.Op == ND_LVAR || node.Lhs.Op == ND_DEREF) {
+            Error(fmt.Sprintf("not an lvalue: %d (%s)", node.Op, node.Name))
+        }
         node.Rhs = walk(node.Rhs, true)
         node.Ty = node.Lhs.Ty
         return node

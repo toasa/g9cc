@@ -109,19 +109,16 @@ func gen_lval(node *Node) int {
     if node.Op == ND_DEREF {
         return gen_expr(node.Expr)
     }
-    if node.Op == ND_LVAR {
-        r := nreg
-        nreg++
-        // r(現在の汎用レジスタ)にrbpを代入する
-        add(IR_MOV, r, 0)
-        // r(現在はrbpの値)からoffset(メモリ上にある識別子が, [rbp]からどれほど離れているか)
-        // だけ減算する
-        add(IR_SUB_IMM, r, node.Offset)
-        return r
-    }
 
-    Error(fmt.Sprintf("not an lvalue: %d (%s)", node.Op, node.Name))
-    return -1 // error value
+    Assert(node.Op == ND_LVAR, "not an lvalue")
+    r := nreg
+    nreg++
+    // r(現在の汎用レジスタ)にrbpを代入する
+    add(IR_MOV, r, 0)
+    // r(現在はrbpの値)からoffset(メモリ上にある識別子が, [rbp]からどれほど離れているか)
+    // だけ減算する
+    add(IR_SUB_IMM, r, node.Offset)
+    return r
 }
 
 func gen_binop(ty int, lhs *Node, rhs *Node) int {
