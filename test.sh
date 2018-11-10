@@ -18,8 +18,6 @@ try() {
     fi
 }
 
-try 3 'int main() { int ary[2]; *ary=1; *(ary+1)=2; return *ary + *(ary+1); }'
-
 try 33 'int main() { return 33; }'
 try 10 'int main() { return 2*3+4; }'
 try 14 'int main() { return 2+3*4; }'
@@ -64,5 +62,8 @@ try 89 'int main() {int i=1; int j=1; for (int k=0; k<10; k=k+1) {int m=i+j; i=j
 try 9 'int main() { int *p = alloc1(4, 5); return *p + *(p + 1); }'
 try 15 'int main() { int *p = alloc2(10, 5); return *(p - 1) + *p; }'
 try 46 'int main() { int **p = alloc_ptr_ptr(46); return **p; }'
+
+try 3 'int main() { int ary[2]; *ary=1; *(ary+1)=2; return *ary + *(ary+1); }'
+try 5 'int main() { int x; int *p = &x; x = 5; return *p; }'
 
 echo OK

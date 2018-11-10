@@ -103,6 +103,13 @@ func unary() *Node {
         return node
     }
 
+    if consume('&') {
+        node := new(Node)
+        node.Op = ND_ADDR
+        node.Expr = mul()
+        return node
+    }
+
     return term()
 }
 

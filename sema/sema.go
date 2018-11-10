@@ -115,6 +115,10 @@ func walk(node *Node, decay bool) {
         walk(node.Rhs, true)
         node.Ty = node.Lhs.Ty
         return
+    case ND_ADDR:
+        walk(node.Expr, true)
+        node.Ty = Ptr_of(node.Expr.Ty)
+        return
     case ND_DEREF:
         walk(node.Expr, true)
         if node.Expr.Ty.Ty != PTR {

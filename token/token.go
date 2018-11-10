@@ -43,13 +43,6 @@ func Tokenize(s string) *Vector {
                 continue
             }
 
-            // Single-letter token
-            if strings.Contains("+-*/;=(),{}<>[]", string(s[i_input])) {
-                add_token(v, int(s[i_input]), string(s[i_input]))
-                i_input++
-                continue
-            }
-
             // Multi-letter token
             for i := 0; symbols[i].name != "NULL"; i++ {
                 name := symbols[i].name
@@ -68,6 +61,13 @@ func Tokenize(s string) *Vector {
                 //i++
                 i_input += l
                 goto loop
+            }
+
+            // Single-letter token
+            if strings.Contains("+-*/;=(),{}<>[]&", string(s[i_input])) {
+                add_token(v, int(s[i_input]), string(s[i_input]))
+                i_input++
+                continue
             }
 
             // Identifier
