@@ -34,6 +34,7 @@ const (
     TK_NUM = iota + 256 // Number Literal
     TK_IDENT // Identifier
     TK_INT // "int"
+    TK_CHAR // "char"
     TK_IF // "if"
     TK_ELSE // "else"
     TK_FOR // "for"
@@ -76,6 +77,7 @@ const (
 
 const (
     INT = iota
+    CHAR
     PTR
     ARY
 )
@@ -128,10 +130,13 @@ const (
     IR_LT
     IR_JMP
     IR_UNLESS
+    IR_LOAD8
     IR_LOAD32
     IR_LOAD64
+    IR_STORE8
     IR_STORE32
     IR_STORE64
+    IR_STORE8_ARG
     IR_STORE32_ARG
     IR_STORE64_ARG
     IR_KILL

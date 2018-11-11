@@ -176,12 +176,15 @@ func Ary_of(base *Type, len_ int) *Type{
 }
 
 func Size_of(ty *Type) int {
+    if ty.Ty == CHAR {
+        return 1
+    }
     if ty.Ty == INT {
         return 4
     }
-    if ty.Ty == ARY {
-        return Size_of(ty.Ary_of) * ty.Len
+    if ty.Ty == PTR {
+        return 8
     }
-    Assert(ty.Ty == PTR, "ty.Ty is not PTR")
-    return 8
+    Assert(ty.Ty == ARY, "ty.Ty is not ARY")
+    return Size_of(ty.Ary_of) * ty.Len
 }

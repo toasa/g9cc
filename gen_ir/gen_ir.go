@@ -26,10 +26,13 @@ var Irinfo_arr []IRInfo = []IRInfo{
     {"LT", IR_TY_REG_REG},
     {"JMP", IR_TY_JMP},
     {"UNLESS", IR_TY_REG_LABEL},
+    {"LOAD8", IR_TY_REG_REG},
     {"LOAD32", IR_TY_REG_REG},
     {"LOAD64", IR_TY_REG_REG},
+    {"STORE8", IR_TY_REG_REG},
     {"STORE32", IR_TY_REG_REG},
     {"STORE64", IR_TY_REG_REG},
+    {"STORE8_ARG", IR_TY_IMM_IMM},
     {"STORE32_ARG", IR_TY_IMM_IMM},
     {"STORE64_ARG", IR_TY_IMM_IMM},
     {"KILL", IR_TY_REG},
@@ -184,10 +187,12 @@ func gen_expr(node *Node) int {
         return r1
     case ND_LVAR:
         var r int = gen_lval(node)
-        if node.Ty.Ty == PTR {
-            add(IR_LOAD64, r, r)
-        } else {
+        if node.Ty.Ty == CHAR {
+            add(IR_LOAD8, r, r)
+        } else if node.Ty.Ty == INT {
             add(IR_LOAD32, r, r)
+        } else {
+            add(IR_LOAD64, r, r)
         }
         return r
     case ND_CALL:
@@ -221,12 +226,13 @@ func gen_expr(node *Node) int {
         var rhs int = gen_expr(node.Rhs)
         // lhsはメモリへstoreするためのアドレスが格納されたレジスタ(の番号)が入っている
         var lhs int = gen_lval(node.Lhs)
-        if node.Lhs.Ty.Ty == PTR {
-            add(IR_STORE64, lhs, rhs)
-        } else {
+        if node.Lhs.Ty.Ty == CHAR {
+            add(IR_STORE8, lhs, rhs)
+        } else if node.Lhs.Ty.Ty == INT {
             add(IR_STORE32, lhs, rhs)
+        } else {
+            add(IR_STORE64, lhs, rhs)
         }
-
         kill(rhs)
         return lhs
     case '+', '-':
@@ -286,12 +292,13 @@ func gen_stmt(node *Node) {
         // ベースレジスタから、変数のオフセット分引く
         add(IR_SUB_IMM, lhs, node.Offset)
         // メモリ上のスタックで、左辺値(lhs)に対し、右辺値(rhs)を代入する
-        if node.Ty.Ty == PTR {
-            add(IR_STORE64, lhs, rhs)
-        } else {
+        if node.Ty.Ty == CHAR {
+            add(IR_STORE8, lhs, rhs)
+        } else if node.Ty.Ty == INT {
             add(IR_STORE32, lhs, rhs)
+        } else {
+            add(IR_STORE64, lhs, rhs)
         }
-
         kill(lhs)
         kill(rhs)
         return
@@ -402,13 +409,13 @@ func Gen_ir(nodes *Vector) *Vector{
         for i := 0; i < node.Args.Len; i++ {
             arg := node.Args.Data[i].(*Node)
 
-            var op int
-            if arg.Ty.Ty == PTR {
-                op = IR_STORE64_ARG
+            if arg.Ty.Ty == CHAR {
+                add(IR_STORE8_ARG, arg.Offset, i)
+            } else if arg.Ty.Ty == INT {
+                add(IR_STORE32_ARG, arg.Offset, i)
             } else {
-                op = IR_STORE32_ARG
+                add(IR_STORE64_ARG, arg.Offset, i)
             }
-            add(op, arg.Offset, i)
         }
 
         gen_stmt(node.Body)

@@ -48,6 +48,7 @@ import (
 var label int
 
 // 関数の引数の値を代入するためのレジスタ
+var argreg8 []string = []string{"dil", "sil", "dl", "cl", "r8b", "r9b"}
 var argreg32 []string = []string{"edi", "esi", "edx", "ecx", "r8d", "r9d"}
 var argreg64 []string = []string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 
@@ -117,14 +118,20 @@ func gen(fn *Function) {
             // 今の所, lhsの(レジスタの)値が0ならラベルに飛ぶ
             fmt.Printf("    cmp %s, 0\n", Regs[ir.Lhs])
             fmt.Printf("    je .L%d\n", ir.Rhs)
+        case IR_LOAD8:
+            fmt.Printf("    mov %s, [%s]\n", Regs8[ir.Lhs], Regs[ir.Rhs])
         case IR_LOAD32:
             fmt.Printf("    mov %s, [%s]\n", Regs32[ir.Lhs], Regs[ir.Rhs])
         case IR_LOAD64:
             fmt.Printf("    mov %s, [%s]\n", Regs[ir.Lhs], Regs[ir.Rhs])
+        case IR_STORE8:
+            fmt.Printf("    mov [%s], %s\n", Regs[ir.Lhs], Regs8[ir.Rhs])
         case IR_STORE32:
             fmt.Printf("    mov [%s], %s\n", Regs[ir.Lhs], Regs32[ir.Rhs])
         case IR_STORE64:
             fmt.Printf("    mov [%s], %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+        case IR_STORE8_ARG:
+            fmt.Printf("    mov [rbp-%d], %s\n", ir.Lhs, argreg8[ir.Rhs])
         case IR_STORE32_ARG:
             fmt.Printf("    mov [rbp-%d], %s\n", ir.Lhs, argreg32[ir.Rhs])
         case IR_STORE64_ARG:

@@ -11,6 +11,7 @@ var tokens *Vector
 var pos int = 0
 
 var int_ty Type = Type{Ty: INT, Ptr_of: nil, Ary_of: nil, Len: 0}
+var char_ty Type = Type{Ty: CHAR}
 
 func expect(ty int) {
     t, _ := tokens.Data[pos].(*Token)
@@ -30,9 +31,15 @@ func consume(ty int) bool {
     }
 }
 
-func is_typename() bool {
+func get_type() *Type {
     t := tokens.Data[pos].(*Token)
-    return t.Ty == TK_INT
+    if t.Ty == TK_INT {
+        return &int_ty
+    }
+    if t.Ty == TK_CHAR {
+        return &char_ty
+    }
+    return nil
 }
 
 func new_binop(op int, lhs *Node, rhs *Node) *Node {
@@ -230,12 +237,12 @@ func assign() *Node {
 // 型宣言を読み取る. ex. int a, int **b,...
 func type_() *Type {
     t := tokens.Data[pos].(*Token)
-    if t.Ty != TK_INT {
+    ty := get_type()
+    if ty == nil  {
         Error(fmt.Sprintf("typename expected, but got %s", t.Input))
     }
     pos++
 
-    ty := &int_ty
     for consume('*') {
         ty = Ptr_of(ty)
     }
@@ -311,7 +318,7 @@ func stmt() *Node {
     t := tokens.Data[pos].(*Token)
 
     switch t.Ty {
-    case TK_INT:
+    case TK_INT, TK_CHAR:
         return decl()
     case TK_IF:
         pos++
@@ -332,7 +339,7 @@ func stmt() *Node {
         expect('(')
         // node.Init = assign()
         // expect(';')
-        if is_typename() {
+        if get_type() != nil {
             node.Init = decl()
         } else {
             node.Init = expr_stmt()
