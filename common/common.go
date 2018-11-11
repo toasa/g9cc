@@ -32,6 +32,7 @@ type Type struct {
 
 const (
     TK_NUM = iota + 256 // Number Literal
+    TK_STR // String literal
     TK_IDENT // Identifier
     TK_INT // "int"
     TK_CHAR // "char"
@@ -49,6 +50,7 @@ const (
 type Token struct {
     Ty int // token type
     Val int // number literal
+    Str string // String literal
     Name string // identifier
     Input string // token string
 }
@@ -58,9 +60,11 @@ type Token struct {
 
 const (
     ND_NUM = iota + 256 // number literal
+    ND_STR // String literal
     ND_IDENT // identifier
     ND_VARDEF // Variable definition
-    ND_LVAR // Variable reference
+    ND_LVAR // Local variable reference
+    ND_GVAR // Glocal variable reference
     ND_IF // "if"
     ND_FOR // "for"
     ND_ADDR // address operator ("&")
@@ -88,6 +92,7 @@ type Node struct {
     Lhs *Node // left-hand side
     Rhs *Node // right-hand side
     Val int // number literal
+    Str string // String literal
     Expr *Node // "return" or Expression statement
     Stmts *Vector // Compound statement
 
@@ -105,6 +110,7 @@ type Node struct {
 
     // Function definition
     Stacksize int
+    Strings *Vector
 
     // Local variable
     Offset int
@@ -127,6 +133,7 @@ const (
     IR_RETURN
     IR_CALL
     IR_LABEL
+    IR_LABEL_ADDR
     IR_LT
     IR_JMP
     IR_UNLESS
@@ -160,6 +167,7 @@ const (
     IR_TY_IMM
     IR_TY_JMP
     IR_TY_LABEL
+    IR_TY_LABEL_ADDR
     IR_TY_REG_REG
     IR_TY_REG_IMM
     IR_TY_IMM_IMM
@@ -174,7 +182,7 @@ type IRInfo struct {
 
 type Function struct {
     Name string
-    // Args [6]int
     Stacksize int
+    Strings *Vector
     Ir *Vector
 }

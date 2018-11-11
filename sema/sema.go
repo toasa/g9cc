@@ -14,11 +14,19 @@ var int_ty Type = Type{Ty: INT, Ptr_of: nil, Ary_of: nil, Len: 0}
 
 type Var struct {
     ty *Type
+    is_local bool
+
+    // local
     offset int
+
+    // global
+    name string
 }
 
+var str_label int
 // 各識別子において、rbpからのoffsetを登録するための辞書
 var vars map[string]interface{}
+var strings *Vector
 var stacksize int
 
 func swap(p **Node, q **Node) {
@@ -47,6 +55,17 @@ func walk(node *Node, decay bool) *Node {
     switch node.Op {
     case ND_NUM:
         return node
+    case ND_STR:
+        name := fmt.Sprintf("L_.str%d", str_label)
+        str_label++
+        node.Name = name
+        Vec_push(strings, node)
+
+        ret := new(Node)
+        ret.Op = ND_GVAR
+        ret.Ty = node.Ty
+        ret.Name = name
+        return walk(ret, decay)
     case ND_IDENT:
         var_, ok := vars[node.Name].(*Var)
 
@@ -63,6 +82,11 @@ func walk(node *Node, decay bool) *Node {
 
         node.Ty = var_.ty
         return node
+    case ND_GVAR:
+        if decay && (node.Ty.Ty == ARY) {
+            return addr_of(node, node.Ty.Ary_of)
+        }
+        return node
     case ND_VARDEF:
         // varsに識別子の登録がされていない場合
         // 識別子をメモリ上へstoreしたり、メモリからloadする時のために、
@@ -72,6 +96,7 @@ func walk(node *Node, decay bool) *Node {
 
         var_ := new(Var)
         var_.ty = node.Ty
+        var_.is_local = true
         var_.offset = stacksize
         vars[node.Name] = var_
 
@@ -175,8 +200,11 @@ func Sema(nodes *Vector) {
 
         // 各関数のローカル変数郡のためのmap
         vars = make(map[string]interface{})
+        strings = New_vec()
         stacksize = 0
+
         walk(node, true)
         node.Stacksize = stacksize
+        node.Strings = strings
     }
 }

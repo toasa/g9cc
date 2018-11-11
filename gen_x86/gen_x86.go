@@ -53,10 +53,18 @@ var argreg32 []string = []string{"edi", "esi", "edx", "ecx", "r8d", "r9d"}
 var argreg64 []string = []string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 
 func gen(fn *Function) {
+    fmt.Printf(".data\n")
+    for i := 0; i < fn.Strings.Len; i++ {
+        node := fn.Strings.Data[i].(*Node)
+        Assert(node.Op == ND_STR, "node.Op is not ND_STR")
+        fmt.Printf("%s:\n", node.Name)
+        fmt.Printf("    .asciz \"%s\"\n", node.Str)
+    }
 
     var ret string = fmt.Sprintf(".Lend%d", label)
     label++
 
+    fmt.Printf(".text\n")
     fmt.Printf(".globl _%s\n", fn.Name)
     fmt.Printf("_%s:\n", fn.Name)
 
@@ -102,6 +110,11 @@ func gen(fn *Function) {
             fmt.Printf("    mov %s, rax\n", Regs[ir.Lhs])
         case IR_LABEL:
             fmt.Printf(".L%d:\n", ir.Lhs)
+        case IR_LABEL_ADDR:
+            // load effective address
+            // 第２オペランドの実行アドレスを計算し、第１オペランドに格納する
+            // 第２オペランドが格納されたアドレスはripによっても変化する？
+            fmt.Printf("    lea %s, [rip + %s]\n", Regs[ir.Lhs], ir.Name)
         case IR_LT:
             // 左右のレジスタを比較. 比較結果はフラグレジスタ(x86-64の場合、RFLAGS)
             // に格納される
@@ -129,6 +142,7 @@ func gen(fn *Function) {
             fmt.Printf("    je .L%d\n", ir.Rhs)
         case IR_LOAD8:
             fmt.Printf("    mov %s, [%s]\n", Regs8[ir.Lhs], Regs[ir.Rhs])
+            fmt.Printf("    movzx %s, %s\n", Regs[ir.Lhs], Regs8[ir.Rhs])
         case IR_LOAD32:
             fmt.Printf("    mov %s, [%s]\n", Regs32[ir.Lhs], Regs[ir.Rhs])
         case IR_LOAD64:

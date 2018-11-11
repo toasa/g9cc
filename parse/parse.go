@@ -76,6 +76,13 @@ func primary() *Node {
         return node
     }
 
+    if t.Ty == TK_STR {
+        node.Ty = Ary_of(&char_ty, len(t.Str))
+        node.Op = ND_STR
+        node.Str = t.Str
+        return node
+    }
+
     if t.Ty == TK_IDENT {
         node.Name = t.Name
 

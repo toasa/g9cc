@@ -45,6 +45,23 @@ func Tokenize(s string) *Vector {
                 continue
             }
 
+            // String literal
+            if s[i_input] == '"' {
+                t := add_token(v, TK_STR, string(s[i_input]))
+                i_input++
+
+                len := i_input
+                for (s[len] != '\000') && (s[len] != '"') {
+                    len++
+                }
+                if s[len] == '\000' {
+                    Error("premature end of input")
+                }
+                t.Str = s[i_input : len]
+                i_input = len + 1
+                continue
+            }
+
             // Multi-letter token
             for i := 0; symbols[i].name != "NULL"; i++ {
                 name := symbols[i].name

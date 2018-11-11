@@ -23,6 +23,7 @@ var Irinfo_arr []IRInfo = []IRInfo{
     {"RET", IR_TY_REG},
     {"CALL", IR_TY_CALL},
     {"", IR_TY_LABEL},
+    {"LABEL_ADDR", IR_TY_LABEL_ADDR},
     {"LT", IR_TY_REG_REG},
     {"JMP", IR_TY_JMP},
     {"UNLESS", IR_TY_REG_LABEL},
@@ -45,6 +46,8 @@ func tostr(ir *IR) string {
     switch info.Ty {
     case IR_TY_LABEL:
         return fmt.Sprintf(".L%d:", ir.Lhs)
+    case IR_TY_LABEL_ADDR:
+        return fmt.Sprintf("  %s r%d, %s", info.Name, ir.Lhs, ir.Name)
     case IR_TY_IMM:
         return fmt.Sprintf("  %s %d", info.Name, ir.Lhs)
     case IR_TY_REG:
@@ -113,14 +116,21 @@ func gen_lval(node *Node) int {
         return gen_expr(node.Expr)
     }
 
-    Assert(node.Op == ND_LVAR, "not an lvalue")
+    if node.Op == ND_LVAR {
+        r := nreg
+        nreg++
+        add(IR_MOV, r, 0)
+        add(IR_SUB_IMM, r, node.Offset)
+        return r
+    }
+
+    Assert(node.Op == ND_GVAR, "not an global variety")
+
     r := nreg
     nreg++
-    // r(現在の汎用レジスタ)にrbpを代入する
-    add(IR_MOV, r, 0)
-    // r(現在はrbpの値)からoffset(メモリ上にある識別子が, [rbp]からどれほど離れているか)
-    // だけ減算する
-    add(IR_SUB_IMM, r, node.Offset)
+
+    ir := add(IR_LABEL_ADDR, r, -1)
+    ir.Name = node.Name
     return r
 }
 
@@ -185,7 +195,7 @@ func gen_expr(node *Node) int {
         add(IR_IMM, r1, 1)
         label(y)
         return r1
-    case ND_LVAR:
+    case ND_GVAR, ND_LVAR:
         var r int = gen_lval(node)
         if node.Ty.Ty == CHAR {
             add(IR_LOAD8, r, r)
@@ -220,7 +230,13 @@ func gen_expr(node *Node) int {
     case ND_DEREF:
         r := gen_expr(node.Expr)
         // 間接参照(int型のポインタが指すメモリを参照する)のでload命令
-        add(IR_LOAD64, r, r)
+        if node.Expr.Ty.Ptr_of.Ty == CHAR {
+            add(IR_LOAD8, r, r)
+        } else if node.Expr.Ty.Ptr_of.Ty == INT {
+            add(IR_LOAD32, r, r)
+        } else {
+            add(IR_LOAD64, r, r)
+        }
         return r
     case '=':
         var rhs int = gen_expr(node.Rhs)
@@ -424,6 +440,7 @@ func Gen_ir(nodes *Vector) *Vector{
         fn.Name = node.Name
         fn.Stacksize = node.Stacksize
         fn.Ir = code
+        fn.Strings = node.Strings
         Vec_push(v, fn)
     }
     return v
