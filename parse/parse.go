@@ -118,7 +118,7 @@ func primary() *Node {
 func postfix() *Node {
     lhs := primary()
     for consume('[') {
-        lhs = new_expr(ND_DEREF, new_binop('+', lhs, primary()))
+        lhs = new_expr(ND_DEREF, new_binop('+', lhs, assign()))
         expect(']')
     }
     return lhs
