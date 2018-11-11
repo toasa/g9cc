@@ -35,7 +35,7 @@ func is_typename() bool {
     return t.Ty == TK_INT
 }
 
-func new_node(op int, lhs *Node, rhs *Node) *Node {
+func new_binop(op int, lhs *Node, rhs *Node) *Node {
     n := new(Node) // new()関数でNode型のポインタを返す
     n.Op = op
     n.Lhs = lhs
@@ -43,7 +43,14 @@ func new_node(op int, lhs *Node, rhs *Node) *Node {
     return n
 }
 
-func term() *Node {
+func new_expr(op int, expr *Node) *Node {
+    node := new(Node)
+    node.Op = op
+    node.Expr = expr
+    return node
+}
+
+func primary() *Node {
     t, _ := tokens.Data[pos].(*Token)
     pos++
 
@@ -94,28 +101,27 @@ func term() *Node {
     return err
 }
 
+func postfix() *Node {
+    lhs := primary()
+    for consume('[') {
+        lhs = new_expr(ND_DEREF, new_binop('+', lhs, primary()))
+        expect(']')
+    }
+    return lhs
+}
+
 // 識別子の先頭につく'*' or '&'を読み取る
 func unary() *Node {
     if consume('*') {
-        node := new(Node)
-        node.Op = ND_DEREF
-        node.Expr = mul()
-        return node
+        return new_expr(ND_DEREF, mul())
     }
     if consume('&') {
-        node := new(Node)
-        node.Op = ND_ADDR
-        node.Expr = mul()
-        return node
+        return new_expr(ND_ADDR, mul())
     }
     if consume(TK_SIZEOF) {
-        node := new(Node)
-        node.Op = ND_SIZEOF
-        node.Expr = unary()
-        return node
+        return new_expr(ND_SIZEOF, unary())
     }
-
-    return term()
+    return postfix()
 }
 
 func mul() *Node {
@@ -129,7 +135,7 @@ func mul() *Node {
         }
         // t.Tyが * または　/ の場合
         pos++
-        lhs = new_node(t.Ty, lhs, unary())
+        lhs = new_binop(t.Ty, lhs, unary())
     }
 
     // ここには通常到達しない
@@ -148,7 +154,7 @@ func add() *Node {
             return lhs
         }
         pos++
-        lhs = new_node(t.Ty, lhs, mul())
+        lhs = new_binop(t.Ty, lhs, mul())
     }
 
     // 通常ここには到達しない
@@ -163,12 +169,12 @@ func rel() *Node {
         t := tokens.Data[pos].(*Token)
         if t.Ty == '<' {
             pos++
-            lhs = new_node('<', lhs, add())
+            lhs = new_binop('<', lhs, add())
             continue
         }
         if t.Ty == '>' {
             pos++
-            lhs = new_node('<', add(), lhs)
+            lhs = new_binop('<', add(), lhs)
             continue
         }
 
@@ -187,7 +193,7 @@ func logand() *Node {
             return lhs
         }
         pos++
-        lhs = new_node(ND_LOGAND, lhs, rel())
+        lhs = new_binop(ND_LOGAND, lhs, rel())
     }
 
     err := new(Node)
@@ -202,7 +208,7 @@ func logor() *Node {
             return lhs
         }
         pos++
-        lhs = new_node(ND_LOGOR, lhs, logand())
+        lhs = new_binop(ND_LOGOR, lhs, logand())
     }
 
     err := new(Node)
@@ -214,7 +220,7 @@ func assign() *Node {
     lhs := logor()
     if consume('=') {
         // =文の場合
-        return new_node('=', lhs, logor())
+        return new_binop('=', lhs, logor())
     }
     // =文でない場合
     return lhs
@@ -236,6 +242,23 @@ func type_() *Type {
     return ty
 }
 
+func read_array(ty *Type) *Type {
+    v := New_vec()
+    for consume('[') {
+        len_ := primary()
+        if len_.Op != ND_NUM {
+            Error("number expected")
+        }
+        Vec_push(v, len_)
+        expect(']')
+    }
+    for i := v.Len - 1; i >= 0; i-- {
+        len_ := v.Data[i].(*Node)
+        ty = Ary_of(ty, len_.Val)
+    }
+    return ty
+}
+
 func decl() *Node {
     node := new(Node)
     node.Op = ND_VARDEF
@@ -252,19 +275,7 @@ func decl() *Node {
     pos++
 
     // Read the second half of type name (e.g. `[3][5]`)
-    ary_size := New_vec()
-    for consume('[') {
-        len_ := term()
-        if len_.Op != ND_NUM {
-            Error("number expected")
-        }
-        Vec_push(ary_size, len_)
-        expect(']')
-    }
-    for i := ary_size.Len - 1; i >= 0; i-- {
-        len_ := ary_size.Data[i].(*Node)
-        node.Ty = Ary_of(node.Ty, len_.Val)
-    }
+    node.Ty = read_array(node.Ty)
 
     // Read an initializer
     if consume('=') {
@@ -290,9 +301,7 @@ func param() *Node {
 }
 
 func expr_stmt() *Node {
-    node := new(Node)
-    node.Op = ND_EXPR_STMT
-    node.Expr = assign()
+    node := new_expr(ND_EXPR_STMT, assign())
     expect(';')
     return node
 }
