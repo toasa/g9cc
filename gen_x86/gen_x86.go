@@ -103,8 +103,17 @@ func gen(fn *Function) {
         case IR_LABEL:
             fmt.Printf(".L%d:\n", ir.Lhs)
         case IR_LT:
+            // 左右のレジスタを比較. 比較結果はフラグレジスタ(x86-64の場合、RFLAGS)
+            // に格納される
             fmt.Printf("    cmp %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+            // フラグレジスタから8bit汎用レジスタに結果をセットする。
             fmt.Printf("    setl %s\n", Regs8[ir.Lhs])
+
+            // 8bitレジスタ, 例えばAL(アキュムレータ・ロー)に結果をセットした場合
+            // RAXの値も変わっている(ALはRAXの下位8bit故). だが、RAXの上位56bit
+            // はもとの値のままなので、ゼロを入れクリアする必要がある. それを行うのが、
+            // movzx
+
             // 9cc には movzb と記載, だがアセンブリ時
             // error: invalid instruction mnemonic 'movzb'　となった
             // movzbl: move zero extended byte to long
