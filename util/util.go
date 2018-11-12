@@ -45,6 +45,14 @@ func Format(fmts ...string) string {
     return str
 }
 
+func Is_graph(c byte) bool {
+    if 0x21 <= c && c <= 0x7e {
+        return true
+    } else {
+        return false
+    }
+}
+
 // Vector
 
 func New_vec() *Vector {

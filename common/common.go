@@ -110,7 +110,7 @@ type Node struct {
 
     // Function definition
     Stacksize int
-    Strings *Vector
+    Globals *Vector
 
     // Local variable
     Offset int
@@ -119,6 +119,20 @@ type Node struct {
     Args *Vector
 }
 
+// sema.go
+
+type Var struct {
+    Ty *Type
+    Is_local bool
+
+    // local
+    Offset int
+
+    // global
+    Name string
+    Data string
+    Len int
+}
 
 // gen_ir.go
 
@@ -183,6 +197,6 @@ type IRInfo struct {
 type Function struct {
     Name string
     Stacksize int
-    Strings *Vector
+    Globals *Vector
     Ir *Vector
 }

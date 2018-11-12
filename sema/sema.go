@@ -12,21 +12,10 @@ import (
 
 var int_ty Type = Type{Ty: INT, Ptr_of: nil, Ary_of: nil, Len: 0}
 
-type Var struct {
-    ty *Type
-    is_local bool
-
-    // local
-    offset int
-
-    // global
-    name string
-}
-
 var str_label int
 // 各識別子において、rbpからのoffsetを登録するための辞書
 var vars map[string]interface{}
-var strings *Vector
+var globals *Vector
 var stacksize int
 
 func swap(p **Node, q **Node) {
@@ -56,15 +45,20 @@ func walk(node *Node, decay bool) *Node {
     case ND_NUM:
         return node
     case ND_STR:
-        name := fmt.Sprintf("L_.str%d", str_label)
+        var_ := new(Var)
+        Vec_push(globals, var_)
+        var_.Ty = node.Ty
+        var_.Is_local = false
+        var_.Name = fmt.Sprintf("L_.str%d", str_label)
         str_label++
-        node.Name = name
-        Vec_push(strings, node)
+        var_.Data = node.Str
+        var_.Len = len(node.Str) + 1
+        //var_.Len = len(node.Str)
 
         ret := new(Node)
         ret.Op = ND_GVAR
         ret.Ty = node.Ty
-        ret.Name = name
+        ret.Name = var_.Name
         return walk(ret, decay)
     case ND_IDENT:
         var_, ok := vars[node.Name].(*Var)
@@ -74,13 +68,13 @@ func walk(node *Node, decay bool) *Node {
         }
         //node.Ty = var_.ty
         node.Op = ND_LVAR
-        node.Offset = var_.offset
+        node.Offset = var_.Offset
 
-        if decay && (var_.ty.Ty == ARY) {
-            return addr_of(node, var_.ty.Ary_of)
+        if decay && (var_.Ty.Ty == ARY) {
+            return addr_of(node, var_.Ty.Ary_of)
         }
 
-        node.Ty = var_.ty
+        node.Ty = var_.Ty
         return node
     case ND_GVAR:
         if decay && (node.Ty.Ty == ARY) {
@@ -95,9 +89,9 @@ func walk(node *Node, decay bool) *Node {
         node.Offset = stacksize
 
         var_ := new(Var)
-        var_.ty = node.Ty
-        var_.is_local = true
-        var_.offset = stacksize
+        var_.Ty = node.Ty
+        var_.Is_local = true
+        var_.Offset = stacksize
         vars[node.Name] = var_
 
         if node.Init != nil {
@@ -200,11 +194,11 @@ func Sema(nodes *Vector) {
 
         // 各関数のローカル変数郡のためのmap
         vars = make(map[string]interface{})
-        strings = New_vec()
+        globals = New_vec()
         stacksize = 0
 
         walk(node, true)
         node.Stacksize = stacksize
-        node.Strings = strings
+        node.Globals = globals
     }
 }

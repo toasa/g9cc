@@ -52,13 +52,28 @@ var argreg8 []string = []string{"dil", "sil", "dl", "cl", "r8b", "r9b"}
 var argreg32 []string = []string{"edi", "esi", "edx", "ecx", "r8d", "r9d"}
 var argreg64 []string = []string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 
+func escape(s string, len int) string {
+    var buf string
+    for s_i := 0; s_i < len; s_i++ {
+        if s[s_i] == '\\' {
+            buf += "\\\\"
+        } else if (Is_graph(s[s_i]) || s[s_i] == ' ') {
+            buf += string(s[s_i])
+        } else {
+            //buf += "\u0000"
+            buf += fmt.Sprintf("\\%03o", s[s_i])
+        }
+    }
+    //buf += "\u0000"
+    return buf
+}
+
 func gen(fn *Function) {
     fmt.Printf(".data\n")
-    for i := 0; i < fn.Strings.Len; i++ {
-        node := fn.Strings.Data[i].(*Node)
-        Assert(node.Op == ND_STR, "node.Op is not ND_STR")
-        fmt.Printf("%s:\n", node.Name)
-        fmt.Printf("    .asciz \"%s\"\n", node.Str)
+    for i := 0; i < fn.Globals.Len; i++ {
+        var_ := fn.Globals.Data[i].(*Var)
+        fmt.Printf("%s:\n", var_.Name)
+        fmt.Printf("    .asciz \"%s\"\n", escape(var_.Data + "\u0000", var_.Len))
     }
 
     var ret string = fmt.Sprintf(".Lend%d", label)

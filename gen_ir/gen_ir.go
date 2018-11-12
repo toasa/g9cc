@@ -440,7 +440,7 @@ func Gen_ir(nodes *Vector) *Vector{
         fn.Name = node.Name
         fn.Stacksize = node.Stacksize
         fn.Ir = code
-        fn.Strings = node.Strings
+        fn.Globals = node.Globals
         Vec_push(v, fn)
     }
     return v
