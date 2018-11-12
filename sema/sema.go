@@ -51,10 +51,14 @@ func swap(p **Node, q **Node) {
     *q = r
 }
 
-func addr_of(base *Node, ty *Type) *Node {
+func maybe_decay(base *Node, decay bool) *Node {
+    if !decay || (base.Ty.Ty != ARY) {
+        return base
+    }
+
     node := new(Node)
     node.Op = ND_ADDR
-    node.Ty = Ptr_of(ty)
+    node.Ty = Ptr_of(base.Ty.Ary_of)
 
     copy := new(Node)
 
@@ -86,7 +90,7 @@ func walk(env *Env, node *Node, decay bool) *Node {
         ret.Op = ND_GVAR
         ret.Ty = node.Ty
         ret.Name = var_.Name
-        return walk(env, ret, decay)
+        return maybe_decay(ret, decay)
     case ND_IDENT:
         var_ := find(env, node.Name)
 
@@ -94,20 +98,16 @@ func walk(env *Env, node *Node, decay bool) *Node {
             Error(fmt.Sprintf("undefined variable: %s", node.Name))
         }
 
-        node.Op = ND_LVAR
-        node.Offset = var_.Offset
-
-        if decay && (var_.Ty.Ty == ARY) {
-            return addr_of(node, var_.Ty.Ary_of)
-        }
-
-        node.Ty = var_.Ty
-        return node
-    case ND_GVAR:
-        if decay && (node.Ty.Ty == ARY) {
-            return addr_of(node, node.Ty.Ary_of)
-        }
-        return node
+        ret := new(Node)
+        ret.Op = ND_LVAR
+        ret.Offset = var_.Offset
+        ret.Ty = var_.Ty
+        return maybe_decay(ret, decay)
+    // case ND_GVAR:
+    //     if decay && (node.Ty.Ty == ARY) {
+    //         return addr_of(node, node.Ty.Ary_of)
+    //     }
+    //     return node
     case ND_VARDEF:
         // varsに識別子の登録がされていない場合
         // 識別子をメモリ上へstoreしたり、メモリからloadする時のために、
