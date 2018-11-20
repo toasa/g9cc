@@ -414,6 +414,11 @@ func Gen_ir(nodes *Vector) *Vector{
 
     for i := 0; i < nodes.Len; i++ {
         node := nodes.Data[i].(*Node)
+
+        if node.Op == ND_VARDEF {
+            continue
+        }
+        
         Assert(node.Op == ND_FUNC, "Type of root node is not ND_FUNC")
 
         // fn.Irに使用

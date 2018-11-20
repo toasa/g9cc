@@ -70,8 +70,7 @@ func main() {
     var nodes *Vector = parse.Parse(tokens)
     // PrintVector(node)
 
-    sema.Sema(nodes)
-
+    var globals *Vector = sema.Sema(nodes)
     var fns *Vector = ir.Gen_ir(nodes)
 
     if dump_ir1 {
@@ -86,5 +85,5 @@ func main() {
     }
     // PrintVector(irv)
 
-    codegen.Gen_x86(fns)
+    codegen.Gen_x86(globals, fns)
 }

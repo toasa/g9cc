@@ -5,6 +5,7 @@ import (
     . "g9cc/util"
     . "g9cc/regs"
     "fmt"
+    "strings"
 )
 
 // Code generator
@@ -54,6 +55,7 @@ var argreg64 []string = []string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 
 func escape(s string, len int) string {
     var buf string
+
     for s_i := 0; s_i < len; s_i++ {
         if s[s_i] == '\\' {
             buf += "\\\\"
@@ -61,7 +63,7 @@ func escape(s string, len int) string {
             buf += string(s[s_i])
         } else {
             //buf += "\u0000"
-            buf += fmt.Sprintf("\\%03o", s[s_i])
+            //buf += fmt.Sprintf("\\%03o", s[s_i])
         }
     }
     //buf += "\u0000"
@@ -69,18 +71,11 @@ func escape(s string, len int) string {
 }
 
 func gen(fn *Function) {
-    fmt.Printf(".data\n")
-    for i := 0; i < fn.Globals.Len; i++ {
-        var_ := fn.Globals.Data[i].(*Var)
-        fmt.Printf("%s:\n", var_.Name)
-        fmt.Printf("    .asciz \"%s\"\n", escape(var_.Data + "\u0000", var_.Len))
-    }
 
     var ret string = fmt.Sprintf(".Lend%d", label)
     label++
 
-    fmt.Printf(".text\n")
-    fmt.Printf(".globl _%s\n", fn.Name)
+    fmt.Printf("    .globl _%s\n", fn.Name)
     fmt.Printf("_%s:\n", fn.Name)
 
     // 関数呼び出しの先頭で以下の２行を行う
@@ -214,15 +209,32 @@ func gen(fn *Function) {
     fmt.Printf("    ret\n")
 }
 
-func Gen_x86(fns *Vector) {
-    fmt.Printf(".intel_syntax noprefix\n")
+func Gen_x86(globals *Vector, fns *Vector) {
+    fmt.Printf("    .intel_syntax noprefix\n")
 
-    func_alloc()
+    fmt.Printf("    .data\n")
+    for i := 0; i < globals.Len; i++ {
+        var_ := globals.Data[i].(*Var)
+        fmt.Printf("%s:\n", var_.Name)
+
+        // fmt.Println("data:", var_.Data, "len:", var_.Len)
+        // fmt.Println("len_of_s:", len(var_.Data + "\u0000"))
+
+        if len(var_.Data + "\u0000") == var_.Len {
+            fmt.Printf("    .ascii \"%s\"\n", escape(var_.Data + "\u0000", var_.Len))
+        } else {
+            fmt.Printf("    .ascii \"%s\"\n", strings.Repeat("\\000", var_.Len))
+        }
+    }
+
+    fmt.Printf("    .text\n")
 
     for i := 0; i < fns.Len; i++ {
         fn := fns.Data[i].(*Function)
         gen(fn)
     }
+
+    func_alloc()
 }
 
 func func_alloc() {

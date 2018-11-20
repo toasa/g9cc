@@ -92,11 +92,15 @@ type Node struct {
     Lhs *Node // left-hand side
     Rhs *Node // right-hand side
     Val int // number literal
-    Str string // String literal
+    // Str string // String literal
     Expr *Node // "return" or Expression statement
     Stmts *Vector // Compound statement
 
     Name string // Identifier
+
+    // Global variable
+    Data string
+    Len int
 
     // "if" (cond) then "else" els
     // "for" (init; cond; inc) body

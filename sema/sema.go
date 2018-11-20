@@ -32,6 +32,17 @@ func new_env(next *Env) *Env{
     return env
 }
 
+func new_global(ty *Type, name, data string, len int) *Var {
+    var_ := new(Var)
+    var_.Ty = ty
+    var_.Is_local = false
+    var_.Name = fmt.Sprintf("L_.str%d", str_label)
+    str_label++
+    var_.Data = data
+    var_.Len = len
+    return var_
+}
+
 func find(env *Env, name string) *Var {
     for ; env != nil; env = env.next {
         if env.vars[name] != nil {
@@ -70,21 +81,24 @@ func maybe_decay(base *Node, decay bool) *Node {
     return node
 }
 
+func check_lval(node *Node) {
+    op := node.Op
+    if op == ND_LVAR || op == ND_GVAR || op == ND_DEREF {
+        return
+    }
+    Error(fmt.Sprintf("not an lvalue: %d (%s)", op, node.Name))
+}
+
 // ASTを渡り歩く
 func walk(env *Env, node *Node, decay bool) *Node {
     switch node.Op {
     case ND_NUM:
         return node
     case ND_STR:
-        var_ := new(Var)
-        Vec_push(globals, var_)
-        var_.Ty = node.Ty
-        var_.Is_local = false
-        var_.Name = fmt.Sprintf("L_.str%d", str_label)
+        var_ := new_global(node.Ty, fmt.Sprintf("L_.str%d", str_label),
+            node.Data, node.Len)
         str_label++
-        var_.Data = node.Str
-        var_.Len = len(node.Str) + 1
-        //var_.Len = len(node.Str)
+        Vec_push(globals, var_)
 
         ret := new(Node)
         ret.Op = ND_GVAR
@@ -98,16 +112,19 @@ func walk(env *Env, node *Node, decay bool) *Node {
             Error(fmt.Sprintf("undefined variable: %s", node.Name))
         }
 
+        if var_.Is_local {
+            ret := new(Node)
+            ret.Op = ND_LVAR
+            ret.Ty = var_.Ty
+            ret.Offset = var_.Offset
+            return maybe_decay(ret, decay)
+        }
+
         ret := new(Node)
-        ret.Op = ND_LVAR
-        ret.Offset = var_.Offset
+        ret.Op = ND_GVAR
         ret.Ty = var_.Ty
+        ret.Name = var_.Name
         return maybe_decay(ret, decay)
-    // case ND_GVAR:
-    //     if decay && (node.Ty.Ty == ARY) {
-    //         return addr_of(node, node.Ty.Ary_of)
-    //     }
-    //     return node
     case ND_VARDEF:
         // varsに識別子の登録がされていない場合
         // 識別子をメモリ上へstoreしたり、メモリからloadする時のために、
@@ -153,9 +170,7 @@ func walk(env *Env, node *Node, decay bool) *Node {
         return node
     case '=':
         node.Lhs = walk(env, node.Lhs, false)
-        if !(node.Lhs.Op == ND_LVAR || node.Lhs.Op == ND_DEREF) {
-            Error(fmt.Sprintf("not an lvalue: %d (%s)", node.Op, node.Name))
-        }
+        check_lval(node.Lhs)
         node.Rhs = walk(env, node.Rhs, true)
         node.Ty = node.Lhs.Ty
         return node
@@ -166,6 +181,7 @@ func walk(env *Env, node *Node, decay bool) *Node {
         return node
     case ND_ADDR:
         node.Expr = walk(env, node.Expr, true)
+        check_lval(node.Expr)
         node.Ty = Ptr_of(node.Expr.Ty)
         return node
     case ND_DEREF:
@@ -215,19 +231,27 @@ func walk(env *Env, node *Node, decay bool) *Node {
     return err
 }
 
-func Sema(nodes *Vector) {
+func Sema(nodes *Vector) *Vector {
+    globals = New_vec()
+    topenv := new_env(nil)
+
     for i := 0; i < nodes.Len; i++ {
         node := nodes.Data[i].(*Node)
+
+        if node.Op == ND_VARDEF {
+            var_ := new_global(node.Ty, node.Name, node.Data, node.Len)
+            Vec_push(globals, var_)
+            topenv.vars[node.Name] = var_
+            continue
+        }
+
         Assert(node.Op == ND_FUNC, "node Op is not ND_FUNC")
 
-        // // 各関数のローカル変数郡のためのmap
-        // vars = make(map[string]interface{})
-
-        globals = New_vec()
         stacksize = 0
 
-        walk(new_env(nil), node, true)
+        walk(topenv, node, true)
         node.Stacksize = stacksize
-        node.Globals = globals
     }
+
+    return globals
 }

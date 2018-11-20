@@ -79,7 +79,8 @@ func primary() *Node {
     if t.Ty == TK_STR {
         node.Ty = Ary_of(&char_ty, len(t.Str))
         node.Op = ND_STR
-        node.Str = t.Str
+        node.Data = t.Str
+        node.Len = len(t.Str) + 1
         return node
     }
 
@@ -395,38 +396,51 @@ func compound_stmt() *Node {
     return node
 }
 
-func function() *Node {
-    node := new(Node)
-    node.Op = ND_FUNC
-    node.Args = New_vec()
-
+func toplevel() *Node {
+    ty := type_()
+    if ty == nil {
+        t := tokens.Data[pos].(*Token)
+        Error(fmt.Sprintf("typename expected, but got %s", t.Input))
+    }
     t := tokens.Data[pos].(*Token)
-
-    if t.Ty != TK_INT {
-        Error(fmt.Sprintf("function return type expected, but got %s", t.Input))
-    }
-    pos++;
-
-    t = tokens.Data[pos].(*Token)
     if t.Ty != TK_IDENT {
-        Error(fmt.Sprintf("function name expected, but got %s", t.Input))
+        Error(fmt.Sprintf("function or variable name expected, but got %s", t.Input))
     }
-    node.Name = t.Name
+    name := t.Name
     pos++
 
-    expect('(')
-    if !consume(')') {
-        // 引数が存在した場合
-        // param()を呼び出すこと引数の変数宣言(ex. add(int x, int y){})を認めた
-        Vec_push(node.Args, param())
-        for consume(',') {
+    // Function
+    if consume('(') {
+        node := new(Node)
+        node.Op = ND_FUNC
+        node.Ty = ty
+        node.Name = name
+        node.Args = New_vec()
+
+        if !consume(')') {
             Vec_push(node.Args, param())
+            for consume(',') {
+                Vec_push(node.Args, param())
+            }
+            expect(')')
         }
-        expect(')')
+
+        expect('{')
+        node.Body = compound_stmt()
+        return node
     }
 
-    expect('{')
-    node.Body = compound_stmt()
+    // Global variable
+    node := new(Node)
+    node.Op = ND_VARDEF
+    node.Ty = read_array(ty)
+    node.Name = name
+
+    node.Data = ""
+
+    node.Len = Size_of(node.Ty)
+
+    expect(';')
     return node
 }
 
@@ -437,7 +451,7 @@ func Parse(tokens_ *Vector) *Vector {
     v := New_vec()
 
     for t := tokens.Data[pos].(*Token); t.Ty != TK_EOF; t = tokens.Data[pos].(*Token) {
-        Vec_push(v, function())
+        Vec_push(v, toplevel())
     }
     return v
 }
