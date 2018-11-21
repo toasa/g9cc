@@ -80,7 +80,7 @@ func primary() *Node {
         node.Ty = Ary_of(&char_ty, len(t.Str))
         node.Op = ND_STR
         node.Data = t.Str
-        node.Len = len(t.Str) + 1
+        node.Len = t.Len
         return node
     }
 

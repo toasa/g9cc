@@ -50,9 +50,12 @@ const (
 type Token struct {
     Ty int // token type
     Val int // number literal
-    Str string // String literal
     Name string // identifier
     Input string // token string
+
+    // String literal
+    Str string
+    Len int
 }
 
 

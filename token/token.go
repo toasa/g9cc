@@ -30,6 +30,47 @@ var symbols = []struct {
     {"||", TK_LOGOR}, {"NULL", 0},
 }
 
+func read_string(s string) (string, int) {
+    s_i := 0;
+    var str string
+
+    for s[s_i] != '"' {
+        if s[s_i] == '\000' {
+            Error("premature end of input")
+        }
+
+        if s[s_i] != '\\' {
+            str += string(s[s_i])
+            s_i++
+            continue
+        }
+
+        s_i++
+        if s[s_i] == 'a' {
+            str += string('\a')
+        } else if s[s_i] == 'b' {
+            str += string('\b')
+        } else if s[s_i] == 'f' {
+            str += string('\f')
+        } else if s[s_i] == 'n' {
+            str += string('\n')
+        } else if s[s_i] == 'r' {
+            str += string('\r')
+        } else if s[s_i] == 't' {
+            str += string('\t')
+        } else if s[s_i] == 'v' {
+            str += string('\v')
+        } else if s[s_i] == '0' {
+            Error("premature end of input")
+        } else {
+            str += string(s[s_i])
+        }
+        s_i++
+    }
+
+    return str, s_i + 1
+}
+
 func Tokenize(s string) *Vector {
     var v *Vector = New_vec()
 
@@ -50,15 +91,8 @@ func Tokenize(s string) *Vector {
                 t := add_token(v, TK_STR, string(s[i_input]))
                 i_input++
 
-                len := i_input
-                for (s[len] != '\000') && (s[len] != '"') {
-                    len++
-                }
-                if s[len] == '\000' {
-                    Error("premature end of input")
-                }
-                t.Str = s[i_input : len]
-                i_input = len + 1
+                t.Str, t.Len = read_string(s[i_input:])
+                i_input += t.Len
                 continue
             }
 
