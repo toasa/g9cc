@@ -70,6 +70,26 @@ func escape(s string, len int) string {
     return buf
 }
 
+func emit_cmp(ir *IR, insn string) {
+    // 左右のレジスタを比較. 比較結果はフラグレジスタ(x86-64の場合、RFLAGS)
+    // に格納される
+    fmt.Printf("    cmp %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+    fmt.Printf("    %s %s\n", insn, Regs8[ir.Lhs])
+    
+    // 9cc には movzb と記載, だがアセンブリ時
+    // error: invalid instruction mnemonic 'movzb'　となった
+    // movzbl: move zero extended byte to long
+
+    // こちらはうまく行った
+    // movzx: move with zero extention
+
+    // 8bitレジスタ, 例えばAL(アキュムレータ・ロー)に結果をセットした場合
+    // RAXの値も変わっている(ALはRAXの下位8bit故). だが、RAXの上位56bit
+    // はもとの値のままなので、ゼロを入れクリアする必要がある. それを行うのが、
+    // movzx
+    fmt.Printf("    movzx %s, %s\n", Regs[ir.Lhs], Regs8[ir.Lhs])
+}
+
 func gen(fn *Function) {
 
     var ret string = fmt.Sprintf(".Lend%d", label)
@@ -125,25 +145,15 @@ func gen(fn *Function) {
             // 第２オペランドの実行アドレスを計算し、第１オペランドに格納する
             // 第２オペランドが格納されたアドレスはripによっても変化する？
             fmt.Printf("    lea %s, [rip + %s]\n", Regs[ir.Lhs], ir.Name)
+        case IR_EQ:
+            // ZFフラグの値をオペランドへ格納
+            emit_cmp(ir, "sete")
+        case IR_NE:
+            // ZFフラグと逆の値をオペランドへ格納
+            emit_cmp(ir, "setne")
         case IR_LT:
-            // 左右のレジスタを比較. 比較結果はフラグレジスタ(x86-64の場合、RFLAGS)
-            // に格納される
-            fmt.Printf("    cmp %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
-            // フラグレジスタから8bit汎用レジスタに結果をセットする。
-            fmt.Printf("    setl %s\n", Regs8[ir.Lhs])
-
-            // 8bitレジスタ, 例えばAL(アキュムレータ・ロー)に結果をセットした場合
-            // RAXの値も変わっている(ALはRAXの下位8bit故). だが、RAXの上位56bit
-            // はもとの値のままなので、ゼロを入れクリアする必要がある. それを行うのが、
-            // movzx
-
-            // 9cc には movzb と記載, だがアセンブリ時
-            // error: invalid instruction mnemonic 'movzb'　となった
-            // movzbl: move zero extended byte to long
-
-            // こちらはうまく行った
-            // movzx: move with zero extention
-             fmt.Printf("    movzx %s, %s\n", Regs[ir.Lhs], Regs8[ir.Lhs])
+            // フラグレジスタの値をオペランドに格納
+            emit_cmp(ir, "setl")
         case IR_JMP:
             fmt.Printf("    jmp .L%d\n", ir.Lhs)
         case IR_UNLESS:

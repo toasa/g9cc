@@ -24,6 +24,8 @@ var Irinfo_arr []IRInfo = []IRInfo{
     {"CALL", IR_TY_CALL},
     {"", IR_TY_LABEL},
     {"LABEL_ADDR", IR_TY_LABEL_ADDR},
+    {"EQ", IR_TY_REG_REG},
+    {"NE", IR_TY_REG_REG},
     {"LT", IR_TY_REG_REG},
     {"JMP", IR_TY_JMP},
     {"UNLESS", IR_TY_REG_LABEL},
@@ -149,6 +151,18 @@ func gen_expr(node *Node) int {
         nreg++
         add(IR_IMM, r, node.Val)
         return r
+    case ND_EQ:
+        lhs := gen_expr(node.Lhs)
+        rhs := gen_expr(node.Rhs)
+        add(IR_EQ, lhs, rhs)
+        kill(rhs)
+        return lhs
+    case ND_NE:
+        lhs := gen_expr(node.Lhs)
+        rhs := gen_expr(node.Rhs)
+        add(IR_NE, lhs, rhs)
+        kill(rhs)
+        return lhs
     case ND_LOGAND:
         // return処理を行うラベルx
         x := nlabel
@@ -418,7 +432,7 @@ func Gen_ir(nodes *Vector) *Vector{
         if node.Op == ND_VARDEF {
             continue
         }
-        
+
         Assert(node.Op == ND_FUNC, "Type of root node is not ND_FUNC")
 
         // fn.Irに使用

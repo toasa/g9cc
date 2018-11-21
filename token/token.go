@@ -27,7 +27,8 @@ var symbols = []struct {
     {"for", TK_FOR}, {"if", TK_IF},
     {"int", TK_INT}, {"return", TK_RETURN},
     {"sizeof", TK_SIZEOF}, {"&&", TK_LOGAND},
-    {"||", TK_LOGOR}, {"NULL", 0},
+    {"||", TK_LOGOR}, {"==", TK_EQ},
+    {"!=", TK_NE}, {"NULL", 0},
 }
 
 func read_string(s string) (string, int) {

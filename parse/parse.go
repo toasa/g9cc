@@ -200,15 +200,36 @@ func rel() *Node {
     return err
 }
 
+func equality() *Node {
+    lhs := rel()
+    for true {
+        t := tokens.Data[pos].(*Token)
+        if t.Ty == TK_EQ {
+            pos++
+            lhs = new_binop(ND_EQ, lhs, rel())
+            continue
+        }
+        if t.Ty == TK_NE {
+            pos++
+            lhs = new_binop(ND_NE, lhs, rel())
+            continue
+        }
+        return lhs
+    }
+
+    err := new(Node)
+    return err
+}
+
 func logand() *Node {
-    var lhs *Node = rel()
+    var lhs *Node = equality()
     for true {
         t := tokens.Data[pos].(*Token)
         if t.Ty != TK_LOGAND {
             return lhs
         }
         pos++
-        lhs = new_binop(ND_LOGAND, lhs, rel())
+        lhs = new_binop(ND_LOGAND, lhs, equality())
     }
 
     err := new(Node)

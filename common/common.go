@@ -39,6 +39,8 @@ const (
     TK_IF // "if"
     TK_ELSE // "else"
     TK_FOR // "for"
+    TK_EQ // ==
+    TK_NE // !=
     TK_LOGOR // ||
     TK_LOGAND // &&
     TK_RETURN // "return"
@@ -72,6 +74,8 @@ const (
     ND_FOR // "for"
     ND_ADDR // address operator ("&")
     ND_DEREF // pointer dereference ("*")
+    ND_EQ // ==
+    ND_NE // !=
     ND_LOGAND // &&
     ND_LOGOR // ||
     ND_RETURN // "return"
@@ -155,6 +159,8 @@ const (
     IR_CALL
     IR_LABEL
     IR_LABEL_ADDR
+    IR_EQ
+    IR_NE
     IR_LT
     IR_JMP
     IR_UNLESS

@@ -51,7 +51,6 @@ func find(env *Env, name string) *Var {
                 return var_
             }
         }
-
     }
     return nil
 }
@@ -174,7 +173,7 @@ func walk(env *Env, node *Node, decay bool) *Node {
         node.Rhs = walk(env, node.Rhs, true)
         node.Ty = node.Lhs.Ty
         return node
-    case '*', '/', '<', ND_LOGAND, ND_LOGOR:
+    case '*', '/', '<', ND_EQ, ND_NE, ND_LOGAND, ND_LOGOR:
         node.Lhs = walk(env, node.Lhs, true)
         node.Rhs = walk(env, node.Rhs, true)
         node.Ty = node.Lhs.Ty
