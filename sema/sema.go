@@ -36,8 +36,7 @@ func new_global(ty *Type, name, data string, len int) *Var {
     var_ := new(Var)
     var_.Ty = ty
     var_.Is_local = false
-    var_.Name = fmt.Sprintf("L_.str%d", str_label)
-    str_label++
+    var_.Name = name
     var_.Data = data
     var_.Len = len
     return var_
@@ -119,6 +118,7 @@ func walk(env *Env, node *Node, decay bool) *Node {
             return maybe_decay(ret, decay)
         }
 
+        // global var
         ret := new(Node)
         ret.Op = ND_GVAR
         ret.Ty = var_.Ty
@@ -243,6 +243,7 @@ func Sema(nodes *Vector) *Vector {
 
         if node.Op == ND_VARDEF {
             var_ := new_global(node.Ty, node.Name, node.Data, node.Len)
+            var_.Is_extern = node.Is_extern
             Vec_push(globals, var_)
             topenv.vars[node.Name] = var_
             continue

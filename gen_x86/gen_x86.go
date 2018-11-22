@@ -233,10 +233,10 @@ func Gen_x86(globals *Vector, fns *Vector) {
     fmt.Printf("    .data\n")
     for i := 0; i < globals.Len; i++ {
         var_ := globals.Data[i].(*Var)
+        if var_.Is_extern {
+            continue
+        }
         fmt.Printf("%s:\n", var_.Name)
-
-        // fmt.Println("data:", var_.Data, "len:", var_.Len)
-        // fmt.Println("len_of_s:", len(var_.Data + "\u0000"))
 
         if len(var_.Data + "\u0000") == var_.Len {
             fmt.Printf("    .ascii \"%s\"\n", escape(var_.Data + "\u0000", var_.Len))
@@ -293,7 +293,7 @@ func func_alloc() {
     // **************************************
 
 
-    fmt.Println(".globl	_alloc1")
+    fmt.Println("    .globl _alloc1")
     fmt.Println("_alloc1:")
     fmt.Println("    push rbp")
     fmt.Println("    mov rbp, rsp")
@@ -307,7 +307,8 @@ func func_alloc() {
     fmt.Println("    pop rbp")
     fmt.Println("    ret")
     fmt.Println("")
-    fmt.Println(".globl	_alloc2")
+
+    fmt.Println("    .globl _alloc2")
     fmt.Println("_alloc2:")
     fmt.Println("    push rbp")
     fmt.Println("    mov rbp, rsp")
@@ -322,7 +323,8 @@ func func_alloc() {
     fmt.Println("    pop rbp")
     fmt.Println("    ret")
     fmt.Println("")
-    fmt.Println(".globl	_alloc_ptr_ptr")
+
+    fmt.Println("    .globl _alloc_ptr_ptr")
     fmt.Println("_alloc_ptr_ptr:")
     fmt.Println("    push rbp")
     fmt.Println("    mov rbp, rsp")
@@ -342,5 +344,10 @@ func func_alloc() {
     fmt.Println("    .zerofill __DATA,__bss,_alloc_ptr_ptr.p,8,3 ## @alloc_ptr_ptr.p")
     fmt.Println("    .zerofill __DATA,__bss,_alloc_ptr_ptr.q,8,3 ## @alloc_ptr_ptr.q")
     fmt.Println("    .zerofill __DATA,__bss,_alloc_ptr_ptr.r,4,2 ## @alloc_ptr_ptr.r")
+    fmt.Println("")
+
+    fmt.Println("    .globl _global_arr")
+    fmt.Println("global_arr:")
+    fmt.Println("    .long 5")
     fmt.Println("")
 }

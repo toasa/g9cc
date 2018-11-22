@@ -428,6 +428,7 @@ func compound_stmt() *Node {
 }
 
 func toplevel() *Node {
+    is_extern := consume(TK_EXTERN)
     ty := type_()
     if ty == nil {
         t := tokens.Data[pos].(*Token)
@@ -467,9 +468,12 @@ func toplevel() *Node {
     node.Ty = read_array(ty)
     node.Name = name
 
-    node.Data = ""
-
-    node.Len = Size_of(node.Ty)
+    if is_extern {
+        node.Is_extern = true
+    } else {
+        // node.Data = ""
+        node.Len = Size_of(node.Ty)
+    }
 
     expect(';')
     return node

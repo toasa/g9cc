@@ -24,7 +24,8 @@ var symbols = []struct {
     ty int
 }{
     {"char", TK_CHAR}, {"do", TK_DO},
-    {"else", TK_ELSE}, {"for", TK_FOR},
+    {"else", TK_ELSE}, {"extern", TK_EXTERN},
+    {"for", TK_FOR},
     {"if", TK_IF}, {"int", TK_INT},
     {"return", TK_RETURN}, {"sizeof", TK_SIZEOF},
     {"while", TK_WHILE},{"&&", TK_LOGAND},

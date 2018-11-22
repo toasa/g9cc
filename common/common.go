@@ -34,6 +34,7 @@ const (
     TK_NUM = iota + 256 // Number Literal
     TK_STR // String literal
     TK_IDENT // Identifier
+    TK_EXTERN // "extern"
     TK_INT // "int"
     TK_CHAR // "char"
     TK_IF // "if"
@@ -109,6 +110,7 @@ type Node struct {
     Name string // Identifier
 
     // Global variable
+    Is_extern bool
     Data string
     Len int
 
@@ -144,6 +146,7 @@ type Var struct {
 
     // global
     Name string
+    Is_extern bool
     Data string
     Len int
 }
