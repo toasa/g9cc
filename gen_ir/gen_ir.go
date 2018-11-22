@@ -69,7 +69,10 @@ func tostr(ir *IR) string {
         var sb string
         sb = fmt.Sprintf("  r%d = %s(", ir.Lhs, ir.Name)
         for i := 0; i < ir.Nargs; i++ {
-            sb += fmt.Sprintf("r%d, ", ir.Args[i])
+            if i != 0 {
+                sb += ", "
+            }
+            sb += fmt.Sprintf("r%d", ir.Args[i])
         }
         sb += ")"
         return sb + "\000"
@@ -264,7 +267,7 @@ func gen_expr(node *Node) int {
         nreg++
         return_reg = r
 
-        gen_stmt(node.Stmt)
+        gen_stmt(node.Body)
         label(return_label)
 
         return_label = orig_label
@@ -326,6 +329,10 @@ func gen_expr(node *Node) int {
 }
 
 func gen_stmt(node *Node) {
+    if node.Op == ND_NULL {
+        return
+    }
+
     if node.Op == ND_VARDEF {
 
         if node.Init == nil {
@@ -371,6 +378,7 @@ func gen_stmt(node *Node) {
 
             gen_stmt(node.Els)
             label(y)
+            return
         }
 
         x := nlabel
@@ -399,7 +407,7 @@ func gen_stmt(node *Node) {
         add(IR_UNLESS, r, y)
         kill(r)
         gen_stmt(node.Body)
-        kill(gen_expr(node.Inc))
+        gen_stmt(node.Inc)
         add(IR_JMP, x, -1)
         label(y)
         return

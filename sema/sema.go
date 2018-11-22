@@ -227,8 +227,10 @@ func walk(env *Env, node *Node, decay bool) *Node {
         node.Expr = walk(env, node.Expr, true)
         return node
     case ND_STMT_EXPR:
-        node.Stmt = walk(env, node.Stmt, true)
+        node.Body = walk(env, node.Body, true)
         node.Ty = &int_ty
+        return node
+    case ND_NULL:
         return node
     default:
         Assert(false, "unknown node type")

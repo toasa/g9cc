@@ -12,6 +12,7 @@ var pos int = 0
 
 var int_ty Type = Type{Ty: INT, Ptr_of: nil, Ary_of: nil, Len: 0}
 var char_ty Type = Type{Ty: CHAR}
+var null_stmt Node = Node{Op: ND_NULL}
 
 func expect(ty int) {
     t, _ := tokens.Data[pos].(*Token)
@@ -65,7 +66,7 @@ func primary() *Node {
         if consume('{') {
             node := new(Node)
             node.Op = ND_STMT_EXPR
-            node.Stmt = compound_stmt()
+            node.Body = compound_stmt()
             expect(')')
             return node
         }
@@ -382,7 +383,18 @@ func stmt() *Node {
         }
         node.Cond = assign()
         expect(';')
-        node.Inc = assign()
+        node.Inc = new_expr(ND_EXPR_STMT, assign())
+        expect(')')
+        node.Body = stmt()
+        return node
+    case TK_WHILE:
+        pos++
+        // while文はfor文の初期化とインクリメントがないものとして扱っている
+        node.Op = ND_FOR
+        node.Init = &null_stmt
+        node.Inc = &null_stmt
+        expect('(')
+        node.Cond = assign()
         expect(')')
         node.Body = stmt()
         return node

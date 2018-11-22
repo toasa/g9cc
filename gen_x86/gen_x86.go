@@ -57,8 +57,9 @@ func escape(s string, len int) string {
     var buf string
 
     for s_i := 0; s_i < len; s_i++ {
-        if s[s_i] == '\\' {
-            buf += "\\\\"
+        if s[s_i] == '\\' || s[s_i] == '"'{
+            buf += "\\"
+            buf += string(s[s_i])
         } else if (Is_graph(s[s_i]) || s[s_i] == ' ') {
             buf += string(s[s_i])
         } else {
