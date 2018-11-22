@@ -379,6 +379,16 @@ func stmt() *Node {
         expect(')')
         node.Body = stmt()
         return node
+    case TK_DO:
+        pos++
+        node.Op = ND_DO_WHILE
+        node.Body = stmt()
+        expect(TK_WHILE)
+        expect('(')
+        node.Cond = assign()
+        expect(')')
+        expect(';')
+        return node
     case TK_RETURN:
         pos++
         node.Op = ND_RETURN

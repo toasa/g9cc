@@ -75,7 +75,7 @@ func emit_cmp(ir *IR, insn string) {
     // に格納される
     fmt.Printf("    cmp %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
     fmt.Printf("    %s %s\n", insn, Regs8[ir.Lhs])
-    
+
     // 9cc には movzb と記載, だがアセンブリ時
     // error: invalid instruction mnemonic 'movzb'　となった
     // movzbl: move zero extended byte to long
@@ -156,6 +156,13 @@ func gen(fn *Function) {
             emit_cmp(ir, "setl")
         case IR_JMP:
             fmt.Printf("    jmp .L%d\n", ir.Lhs)
+        case IR_IF:
+            // 左右のオペランドを引き算し、フラグレジスタに結果を格納
+            fmt.Printf("    cmp %s, 0\n", Regs[ir.Lhs])
+            // jump if not equal
+            // ZF(ゼロ・フラグ)が0のとき(cmpを行い左右のオペランドが等しくないとき),
+            // オペランドのラベルへジャンプ
+            fmt.Printf("    jne .L%d\n", ir.Rhs)
         case IR_UNLESS:
             // 今の所, lhsの(レジスタの)値が0ならラベルに飛ぶ
             fmt.Printf("    cmp %s, 0\n", Regs[ir.Lhs])
@@ -222,6 +229,7 @@ func gen(fn *Function) {
 func Gen_x86(globals *Vector, fns *Vector) {
     fmt.Printf("    .intel_syntax noprefix\n")
 
+    // .data以下をデータセグメントに配置する命令
     fmt.Printf("    .data\n")
     for i := 0; i < globals.Len; i++ {
         var_ := globals.Data[i].(*Var)
@@ -237,6 +245,7 @@ func Gen_x86(globals *Vector, fns *Vector) {
         }
     }
 
+    // .text以下をテキストセグメントに配置する命令
     fmt.Printf("    .text\n")
 
     for i := 0; i < fns.Len; i++ {

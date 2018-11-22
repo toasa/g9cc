@@ -1,27 +1,3 @@
-// 大まかな流れ
-//
-// input from command line
-// |
-// |   Tokenize() in token.go
-// v
-// tokens *Vector (tokens.dataは*Token型の配列)
-// |
-// |   Parse() in parse.go
-// v
-// node *Node: 構文木のroot node (root nodeさえわかれば、他のnodeへは辿って行けるので*Vectorによるwrapは不要)
-// |
-// |   Gen_ir() in ir.go
-// v
-// irv *Vector (irv.dataは*IR型の配列)
-// |
-// |   Alloc_regs() in regalloc.go
-// v
-// irv : 中間表現の完成（一つ前のirvはレジスタ割当に無駄がある）
-// |
-// |   Gen_x86() in codegen.go
-// v
-// assembly code
-
 package main
 
 import (

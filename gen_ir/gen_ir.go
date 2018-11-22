@@ -28,6 +28,7 @@ var Irinfo_arr []IRInfo = []IRInfo{
     {"NE", IR_TY_REG_REG},
     {"LT", IR_TY_REG_REG},
     {"JMP", IR_TY_JMP},
+    {"IF", IR_TY_REG_LABEL},
     {"UNLESS", IR_TY_REG_LABEL},
     {"LOAD8", IR_TY_REG_REG},
     {"LOAD32", IR_TY_REG_REG},
@@ -384,6 +385,17 @@ func gen_stmt(node *Node) {
         kill(gen_expr(node.Inc))
         add(IR_JMP, x, -1)
         label(y)
+        return
+    }
+
+    if node.Op == ND_DO_WHILE {
+        x := nlabel
+        nlabel++
+        label(x)
+        gen_stmt(node.Body)
+        r := gen_expr(node.Cond)
+        add(IR_IF, r, x)
+        kill(r)
         return
     }
 

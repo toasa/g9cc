@@ -1,6 +1,6 @@
 // gen_ir.goが担っていた機能, 各識別子や変数をstoreやloadするために
 // base pointerからの距離を, map varsに格納し、node.Offsetに代入する機能,
-// これをsema.goに書いた.
+// これをsema.goに書いた. またグローバル変数の環境範囲（？）もここで行う
 
 package sema
 
@@ -152,6 +152,10 @@ func walk(env *Env, node *Node, decay bool) *Node {
         node.Init = walk(env, node.Init, true)
         node.Cond = walk(env, node.Cond, true)
         node.Inc = walk(env, node.Inc, true)
+        node.Body = walk(env, node.Body, true)
+        return node
+    case ND_DO_WHILE:
+        node.Cond = walk(env, node.Cond, true)
         node.Body = walk(env, node.Body, true)
         return node
     case '+', '-':
