@@ -88,6 +88,7 @@ const (
     ND_FUNC // Function definition
     ND_COMP_STMT // Compound statement
     ND_EXPR_STMT // Expression statement
+    ND_STMT_EXPR // Statement expression (GNU extn)
 )
 
 const (
@@ -103,8 +104,8 @@ type Node struct {
     Lhs *Node // left-hand side
     Rhs *Node // right-hand side
     Val int // number literal
-    // Str string // String literal
     Expr *Node // "return" or Expression statement
+    Stmt *Node // Statement expression
     Stmts *Vector // Compound statement
 
     Name string // Identifier

@@ -62,6 +62,13 @@ func primary() *Node {
     pos++
 
     if t.Ty == '(' {
+        if consume('{') {
+            node := new(Node)
+            node.Op = ND_STMT_EXPR
+            node.Stmt = compound_stmt()
+            expect(')')
+            return node
+        }
         var node *Node = assign()
         expect(')')
         return node

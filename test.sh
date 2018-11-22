@@ -18,6 +18,11 @@ try() {
     fi
 }
 
+try 4 '
+    int main() {
+        return 4;
+    }'
+
 try 33 'int main() { return 33; }'
 try 10 'int main() { return 2*3+4; }'
 try 14 'int main() { return 2+3*4; }'
@@ -98,5 +103,7 @@ try 0 'int main() { return 5 != 5; }'
 try 45 'int main() { int x = 0; int y = 0; do { y=y+x; x=x+1; } while (x < 10); return y; }'
 
 try 5 'extern int global_arr[1]; int main() { return global_arr[0]; }'
+
+try 8 'int main() { return 3 + ({ return 5; }); }'
 
 echo OK

@@ -95,6 +95,8 @@ var code *Vector
 // 汎用レジスタの番号
 var nreg int
 var nlabel int
+var return_label int
+var return_reg int
 
 func add(op int, lhs int, rhs int) *IR {
     var ir *IR = new(IR)
@@ -253,6 +255,21 @@ func gen_expr(node *Node) int {
             add(IR_LOAD64, r, r)
         }
         return r
+    case ND_STMT_EXPR:
+        orig_label := return_label
+        orig_reg := return_reg
+        return_label = nlabel
+        nlabel++
+        r := nreg
+        nreg++
+        return_reg = r
+
+        gen_stmt(node.Stmt)
+        label(return_label)
+
+        return_label = orig_label
+        return_reg = orig_reg
+        return r
     case '=':
         var rhs int = gen_expr(node.Rhs)
         // lhsはメモリへstoreするためのアドレスが格納されたレジスタ(の番号)が入っている
@@ -401,6 +418,15 @@ func gen_stmt(node *Node) {
 
     if node.Op == ND_RETURN {
         r := gen_expr(node.Expr)
+
+        // Statement expression (GNU extension)
+        if return_label != 0 {
+            add(IR_MOV, return_reg, r)
+            kill(r)
+            add(IR_JMP, return_label, -1)
+            return
+        }
+
         add(IR_RETURN, r, -1)
         kill(r)
         return
@@ -425,6 +451,7 @@ func gen_stmt(node *Node) {
 func Gen_ir(nodes *Vector) *Vector{
 
     v := New_vec()
+    nlabel = 1
 
     // ===変数名(型)===
     // v(*Vector)
