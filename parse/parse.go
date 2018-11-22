@@ -422,6 +422,9 @@ func stmt() *Node {
             Vec_push(node.Stmts, stmt())
         }
         return node
+    case ';':
+        pos++
+        return &null_stmt
     default:
         // 式文
         return expr_stmt()
