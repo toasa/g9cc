@@ -33,6 +33,29 @@ func label(x int) {
     add(IR_LABEL, x, -1)
 }
 
+func choose_insn(node *Node, op8, op32, op64 int) int {
+    sz := Size_of(node.Ty)
+    if sz == 1 {
+        return op8
+    } else if sz == 4 {
+        return op32
+    }
+    Assert(sz == 8, "unmatched size")
+    return op64
+}
+
+func load_insn(node *Node) int {
+    return choose_insn(node, IR_LOAD8, IR_LOAD32, IR_LOAD64)
+}
+
+func store_insn(node *Node) int  {
+    return choose_insn(node, IR_STORE8, IR_STORE32, IR_STORE64)
+}
+
+func store_arg_insn(node *Node) int {
+    return choose_insn(node, IR_STORE8_ARG, IR_STORE32_ARG, IR_STORE64_ARG)
+}
+
 func gen_lval(node *Node) int {
 
     if node.Op == ND_DEREF {
@@ -131,13 +154,7 @@ func gen_expr(node *Node) int {
         return r1
     case ND_GVAR, ND_LVAR:
         var r int = gen_lval(node)
-        if node.Ty.Ty == CHAR {
-            add(IR_LOAD8, r, r)
-        } else if node.Ty.Ty == INT {
-            add(IR_LOAD32, r, r)
-        } else {
-            add(IR_LOAD64, r, r)
-        }
+        add(load_insn(node), r, r)
         return r
     case ND_CALL:
         var args [6]int
@@ -164,13 +181,7 @@ func gen_expr(node *Node) int {
     case ND_DEREF:
         r := gen_expr(node.Expr)
         // 間接参照(int型のポインタが指すメモリを参照する)のでload命令
-        if node.Expr.Ty.Ptr_to.Ty == CHAR {
-            add(IR_LOAD8, r, r)
-        } else if node.Expr.Ty.Ptr_to.Ty == INT {
-            add(IR_LOAD32, r, r)
-        } else {
-            add(IR_LOAD64, r, r)
-        }
+        add(load_insn(node), r, r)
         return r
     case ND_STMT_EXPR:
         orig_label := return_label
@@ -191,13 +202,7 @@ func gen_expr(node *Node) int {
         var rhs int = gen_expr(node.Rhs)
         // lhsはメモリへstoreするためのアドレスが格納されたレジスタ(の番号)が入っている
         var lhs int = gen_lval(node.Lhs)
-        if node.Lhs.Ty.Ty == CHAR {
-            add(IR_STORE8, lhs, rhs)
-        } else if node.Lhs.Ty.Ty == INT {
-            add(IR_STORE32, lhs, rhs)
-        } else {
-            add(IR_STORE64, lhs, rhs)
-        }
+        add(store_insn(node), lhs, rhs)
         kill(rhs)
         return lhs
     case '+', '-':
@@ -259,13 +264,7 @@ func gen_stmt(node *Node) {
         // ベースレジスタから、変数のオフセット分引く
         add(IR_BPREL, lhs, node.Offset)
         // メモリ上のスタックで、左辺値(lhs)に対し、右辺値(rhs)を代入する
-        if node.Ty.Ty == CHAR {
-            add(IR_STORE8, lhs, rhs)
-        } else if node.Ty.Ty == INT {
-            add(IR_STORE32, lhs, rhs)
-        } else {
-            add(IR_STORE64, lhs, rhs)
-        }
+        add(store_insn(node), lhs, rhs)
         kill(lhs)
         kill(rhs)
         return
@@ -402,14 +401,7 @@ func Gen_ir(nodes *Vector) *Vector{
 
         for i := 0; i < node.Args.Len; i++ {
             arg := node.Args.Data[i].(*Node)
-
-            if arg.Ty.Ty == CHAR {
-                add(IR_STORE8_ARG, arg.Offset, i)
-            } else if arg.Ty.Ty == INT {
-                add(IR_STORE32_ARG, arg.Offset, i)
-            } else {
-                add(IR_STORE64_ARG, arg.Offset, i)
-            }
+            add(store_arg_insn(arg), arg.Offset, i)
         }
 
         gen_stmt(node.Body)
