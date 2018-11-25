@@ -18,6 +18,15 @@ try() {
     fi
 }
 
+try 3 'int main() {
+        // single-line comment
+        return 3; }'
+try 4 'int main() {
+    /***************************
+    * Multi-line comment test *
+    ***************************/
+    return 4;
+    }'
 try 33 'int main() { return 33; }'
 try 10 'int main() { return 2*3+4; }'
 try 14 'int main() { return 2+3*4; }'

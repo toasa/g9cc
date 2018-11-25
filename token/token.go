@@ -120,8 +120,32 @@ func Tokenize(s string) *Vector {
         for s[i_input] != '\000' {
 
             // skip white space
-            if isspace(s[i_input]) {
+            if isspace(s[i_input]) || s[i_input] == '\n' || s[i_input] == '\t'{
                 i_input++
+                continue
+            }
+
+            // Line comment
+            if s[i_input:i_input+2] == "//" {
+                for s[i_input] != '\000' && s[i_input] != '\n' {
+                    i_input++
+                }
+                continue
+            }
+
+            // Block comment
+            if s[i_input:i_input+2] == "/*" {
+                i_input += 2
+                for true {
+                    if s[i_input] == '\000' {
+                        Error("premature end of input")
+                    }
+                    if s[i_input:i_input+2] == "*/" {
+                        i_input += 2
+                        break
+                    }
+                    i_input++
+                }
                 continue
             }
 
