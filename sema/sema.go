@@ -128,6 +128,7 @@ func walk(node *Node, env *Env, decay bool) *Node {
         // varsに識別子の登録がされていない場合
         // 識別子をメモリ上へstoreしたり、メモリからloadする時のために、
         // base pointerからの距離を, map varsに格納しておく。
+        stacksize = Roundup(stacksize, Align_of(node.Ty))
         stacksize += Size_of(node.Ty)
         node.Offset = stacksize
 

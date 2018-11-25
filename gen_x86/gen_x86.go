@@ -117,7 +117,7 @@ func gen(fn *Function) {
     fmt.Printf("    push rbp\n")
     fmt.Printf("    mov rbp, rsp\n")
 
-    fmt.Printf("    sub rsp, %d\n", fn.Stacksize)
+    fmt.Printf("    sub rsp, %d\n", Roundup(fn.Stacksize, 16))
     fmt.Printf("    push r12\n")
     fmt.Printf("    push r13\n")
     fmt.Printf("    push r14\n")
