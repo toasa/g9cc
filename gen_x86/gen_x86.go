@@ -129,8 +129,8 @@ func gen(fn *Function) {
         switch ir.Op {
         case IR_IMM:
             fmt.Printf("    mov %s, %d\n", Regs[ir.Lhs], ir.Rhs)
-        case IR_SUB_IMM:
-            fmt.Printf("    sub %s, %d\n", Regs[ir.Lhs], ir.Rhs)
+        case IR_BPREL:
+            fmt.Printf("    lea %s, [rbp - %d]\n", Regs[ir.Lhs], ir.Rhs)
         case IR_MOV:
             fmt.Printf("    mov %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
         case IR_RETURN: // lhsに格納された値をアキュムレータに渡し、戻り値とする

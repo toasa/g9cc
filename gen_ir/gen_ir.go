@@ -18,7 +18,7 @@ var Irinfo_arr []IRInfo = []IRInfo{
     {"MUL", IR_TY_REG_REG},
     {"DIV", IR_TY_REG_REG},
     {"MOV", IR_TY_REG_IMM},
-    {"SUB", IR_TY_REG_IMM},
+    {"BPREL", IR_TY_REG_IMM},
     {"MOV", IR_TY_REG_REG},
     {"RET", IR_TY_REG},
     {"CALL", IR_TY_CALL},
@@ -127,8 +127,7 @@ func gen_lval(node *Node) int {
     if node.Op == ND_LVAR {
         r := nreg
         nreg++
-        add(IR_MOV, r, 0)
-        add(IR_SUB_IMM, r, node.Offset)
+        add(IR_BPREL, r, node.Offset)
         return r
     }
 
@@ -342,10 +341,8 @@ func gen_stmt(node *Node) {
         var rhs int = gen_expr(node.Init)
         var lhs int = nreg
         nreg++
-        // lhsにベースレジスタのアドレスを代入
-        add(IR_MOV, lhs, 0)
         // ベースレジスタから、変数のオフセット分引く
-        add(IR_SUB_IMM, lhs, node.Offset)
+        add(IR_BPREL, lhs, node.Offset)
         // メモリ上のスタックで、左辺値(lhs)に対し、右辺値(rhs)を代入する
         if node.Ty.Ty == CHAR {
             add(IR_STORE8, lhs, rhs)
