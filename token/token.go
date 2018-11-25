@@ -33,8 +33,52 @@ var symbols = []struct {
     {"!=", TK_NE}, {"NULL", 0},
 }
 
+var escaped [256]int32;
+func init_escaped() {
+    escaped['a'] = '\a'
+    escaped['b'] = '\b'
+    escaped['f'] = '\f'
+    escaped['n'] = '\n'
+    escaped['r'] = '\r'
+    escaped['t'] = '\t'
+    escaped['v'] = '\v'
+    escaped['e'] = '\033'
+    escaped['E'] = '\033'
+}
+
+func read_char(result *int, s string) int {
+    s_i := 0
+    if s[s_i] == '\000' {
+        Error("premature end of input")
+    }
+
+    if s[s_i] != '\\' {
+        *result = int(s[s_i])
+        s_i++
+    } else {
+        s_i++
+        if s[s_i] == '\000' {
+            Error("premature end of input")
+        }
+        esc := escaped[s[s_i]]
+        if esc != 0 {
+            *result = int(esc)
+        } else {
+            *result = int(s[s_i])
+        }
+        s_i++
+    }
+
+    if s[s_i] != '\'' {
+        Error("unclosed character literal")
+    }
+    s_i++
+    return s_i
+}
+
 func read_string(s string) (string, int) {
-    s_i := 0;
+
+    s_i := 0
     var str string
 
     for s[s_i] != '"' {
@@ -49,22 +93,12 @@ func read_string(s string) (string, int) {
         }
 
         s_i++
-        if s[s_i] == 'a' {
-            str += string('\a')
-        } else if s[s_i] == 'b' {
-            str += string('\b')
-        } else if s[s_i] == 'f' {
-            str += string('\f')
-        } else if s[s_i] == 'n' {
-            str += string('\n')
-        } else if s[s_i] == 'r' {
-            str += string('\r')
-        } else if s[s_i] == 't' {
-            str += string('\t')
-        } else if s[s_i] == 'v' {
-            str += string('\v')
-        } else if s[s_i] == '0' {
+        if s[s_i] == '\000' {
             Error("premature end of input")
+        }
+        esc := escaped[s[s_i]]
+        if esc != 0 {
+            str += string(esc)
         } else {
             str += string(s[s_i])
         }
@@ -77,6 +111,8 @@ func read_string(s string) (string, int) {
 func Tokenize(s string) *Vector {
     var v *Vector = New_vec()
 
+    init_escaped()
+
     // index of input
     i_input := 0
 
@@ -86,6 +122,14 @@ func Tokenize(s string) *Vector {
             // skip white space
             if isspace(s[i_input]) {
                 i_input++
+                continue
+            }
+
+            // Character literal
+            if s[i_input] == '\'' {
+                t := add_token(v, TK_NUM, string(s[i_input]))
+                i_input++
+                i_input += read_char(&t.Val, s[i_input:])
                 continue
             }
 
