@@ -144,6 +144,9 @@ func unary() *Node {
     if consume(TK_SIZEOF) {
         return new_expr(ND_SIZEOF, unary())
     }
+    if consume(TK_ALIGNOF) {
+        return new_expr(ND_ALIGNOF, unary())
+    }
     return postfix()
 }
 

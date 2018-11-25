@@ -48,6 +48,7 @@ const (
     TK_LOGAND // &&
     TK_RETURN // "return"
     TK_SIZEOF // "sizeof"
+    TK_ALIGNOF // "_Alignof"
     TK_EOF
 )
 
@@ -84,6 +85,7 @@ const (
     ND_LOGOR // ||
     ND_RETURN // "return"
     ND_SIZEOF // "sizeof"
+    ND_ALIGNOF // "_Alignof"
     ND_CALL // Function call
     ND_FUNC // Function definition
     ND_COMP_STMT // Compound statement
@@ -152,6 +154,12 @@ type Var struct {
     Len int
 }
 
+// ir_dump.go
+type IRInfo struct {
+    Name string
+    Ty int
+}
+
 // gen_ir.go
 
 const (
@@ -209,11 +217,6 @@ const (
     IR_TY_REG_LABEL
     IR_TY_CALL
 )
-
-type IRInfo struct {
-    Name string
-    Ty int
-}
 
 type Function struct {
     Name string

@@ -4,7 +4,7 @@ import (
     . "g9cc/common"
     . "g9cc/util"
     . "g9cc/regs"
-    . "g9cc/gen_ir"
+    . "g9cc/irdump"
 )
 
 // Register allocator

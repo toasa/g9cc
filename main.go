@@ -7,6 +7,7 @@ import (
     "g9cc/token"
     "g9cc/parse"
     "g9cc/sema"
+    "g9cc/irdump"
     "g9cc/gen_ir"
     "g9cc/regalloc"
     "g9cc/gen_x86"
@@ -47,17 +48,17 @@ func main() {
     // PrintVector(node)
 
     var globals *Vector = sema.Sema(nodes)
-    var fns *Vector = ir.Gen_ir(nodes)
+    var fns *Vector = gen_ir.Gen_ir(nodes)
 
     if dump_ir1 {
-        ir.Dump_ir(fns)
+        irdump.Dump_ir(fns)
     }
     //PrintVector(fns)
 
     regalloc.Alloc_regs(fns)
 
     if dump_ir2 {
-        ir.Dump_ir(fns)
+        irdump.Dump_ir(fns)
     }
     // PrintVector(irv)
 

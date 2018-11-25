@@ -87,6 +87,14 @@ func check_lval(node *Node) {
     Error(fmt.Sprintf("not an lvalue: %d (%s)", op, node.Name))
 }
 
+func new_int(val int) *Node {
+    node := new(Node)
+    node.Op = ND_NUM
+    //node.Ty = INT
+    node.Val = val
+    return node
+}
+
 // ASTを渡り歩く
 func walk(node *Node, env *Env, decay bool) *Node {
     switch node.Op {
@@ -200,12 +208,10 @@ func walk(node *Node, env *Env, decay bool) *Node {
         return node
     case ND_SIZEOF:
         expr := walk(node.Expr, env, false)
-
-        ret := new(Node)
-        ret.Op = ND_NUM
-        ret.Ty = &Type{Ty: INT, Ptr_to: nil, Ary_of: nil, Len: 0}
-        ret.Val = Size_of(expr.Ty)
-        return ret
+        return new_int(Size_of(expr.Ty))
+    case ND_ALIGNOF:
+        expr := walk(node.Expr, env, false)
+        return new_int(Align_of(expr.Ty))
     case ND_CALL:
         for i := 0; i < node.Args.Len; i++ {
             node.Args.Data[i] = walk(node.Args.Data[i].(*Node), env, true)
