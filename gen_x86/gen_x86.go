@@ -6,6 +6,7 @@ import (
     . "g9cc/regs"
     "fmt"
     "strings"
+    "strconv"
 )
 
 // Code generator
@@ -54,12 +55,23 @@ var argreg32 []string = []string{"edi", "esi", "edx", "ecx", "r8d", "r9d"}
 var argreg64 []string = []string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 
 func escape(s string, len int) string {
+    var escaped[256]int32
+    escaped['\b'] = 'b'
+    escaped['\f'] = 'f'
+    escaped['\n'] = 'n'
+    escaped['\r'] = 'r'
+    escaped['\t'] = 't'
+    escaped['\\'] = '\\'
+    escaped['\''] = '\''
+    escaped['"'] = '"'
+
     var buf string
 
     for s_i := 0; s_i < len; s_i++ {
-        if s[s_i] == '\\' || s[s_i] == '"'{
+        esc := escaped[int32(s[s_i])]
+        if esc != 0 {
             buf += "\\"
-            buf += string(s[s_i])
+            buf += strconv.Itoa(int(esc))
         } else if (Is_graph(s[s_i]) || s[s_i] == ' ') {
             buf += string(s[s_i])
         } else {
