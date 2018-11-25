@@ -79,12 +79,12 @@ func gen_lval(node *Node) int {
     return r
 }
 
-func gen_binop(ty int, lhs *Node, rhs *Node) int {
-    r1 := gen_expr(lhs)
-    r2 := gen_expr(rhs)
-    add(ty, r1, r2)
-    kill(r2)
-    return r1
+func gen_binop(ty int, node *Node) int {
+    lhs := gen_expr(node.Lhs)
+    rhs := gen_expr(node.Rhs)
+    add(ty, lhs, rhs)
+    kill(rhs)
+    return lhs
 }
 
 func gen_expr(node *Node) int {
@@ -95,17 +95,9 @@ func gen_expr(node *Node) int {
         add(IR_IMM, r, node.Val)
         return r
     case ND_EQ:
-        lhs := gen_expr(node.Lhs)
-        rhs := gen_expr(node.Rhs)
-        add(IR_EQ, lhs, rhs)
-        kill(rhs)
-        return lhs
+        return gen_binop(IR_EQ, node)
     case ND_NE:
-        lhs := gen_expr(node.Lhs)
-        rhs := gen_expr(node.Rhs)
-        add(IR_NE, lhs, rhs)
-        kill(rhs)
-        return lhs
+        return gen_binop(IR_NE, node)
     case ND_LOGAND:
         // return処理を行うラベルx
         x := nlabel
@@ -215,7 +207,7 @@ func gen_expr(node *Node) int {
         }
 
         if node.Lhs.Ty.Ty != PTR {
-            return gen_binop(insn, node.Lhs, node.Rhs)
+            return gen_binop(insn, node)
         }
 
         rhs := gen_expr(node.Rhs)
@@ -234,11 +226,11 @@ func gen_expr(node *Node) int {
 
         return lhs
     case '*':
-        return gen_binop(IR_MUL, node.Lhs, node.Rhs)
+        return gen_binop(IR_MUL, node)
     case '/':
-        return gen_binop(IR_DIV, node.Lhs, node.Rhs)
+        return gen_binop(IR_DIV, node)
     case '<':
-        return gen_binop(IR_LT, node.Lhs, node.Rhs)
+        return gen_binop(IR_LT, node)
     default:
         Assert(false, "unknown AST type")
     }
