@@ -18,6 +18,25 @@ try() {
     fi
 }
 
+path="./examples/"
+try2() {
+    expect="$1"
+    filename="$2"
+
+    go run main.go -export-file $path"$filename" > tmp.s
+    gcc -o tmp tmp.s
+
+    ./tmp
+    actual="$?"
+
+    if [ "$actual" == "$expect" ]; then
+        echo "$filename => $actual"
+    else
+        echo "$input: $expect expected, but got $actual"
+        exit 1
+    fi
+}
+
 try 3 'int main() {
         // single-line comment
         return 3; }'
@@ -118,5 +137,8 @@ try 5 'extern int global_arr[1]; int main() { return global_arr[0]; }'
 try 8 'int main() { return 3 + ({ return 5; }); }'
 
 try 1 'int main() { ; return 1; }'
+
+try2 46 'test.c'
+try2 55 'fib.c'
 
 echo OK
