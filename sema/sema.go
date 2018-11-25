@@ -10,7 +10,7 @@ import (
     "fmt"
 )
 
-var int_ty Type = Type{Ty: INT, Ptr_of: nil, Ary_of: nil, Len: 0}
+var int_ty Type = Type{Ty: INT, Ptr_to: nil, Ary_of: nil, Len: 0}
 
 // Compound statement( {...; ...; ...;} )内に変数のスコープを制限するための構造体Env.
 // 各comp stmtごとに変数を登録するためのmap, varsを持っている
@@ -67,7 +67,7 @@ func maybe_decay(base *Node, decay bool) *Node {
 
     node := new(Node)
     node.Op = ND_ADDR
-    node.Ty = Ptr_of(base.Ty.Ary_of)
+    node.Ty = Ptr_to(base.Ty.Ary_of)
 
     copy := new(Node)
 
@@ -185,14 +185,14 @@ func walk(node *Node, env *Env, decay bool) *Node {
     case ND_ADDR:
         node.Expr = walk(node.Expr, env, true)
         check_lval(node.Expr)
-        node.Ty = Ptr_of(node.Expr.Ty)
+        node.Ty = Ptr_to(node.Expr.Ty)
         return node
     case ND_DEREF:
         node.Expr = walk(node.Expr, env, true)
         if node.Expr.Ty.Ty != PTR {
             Error("operand must be a pointer")
         }
-        node.Ty = node.Expr.Ty.Ptr_of
+        node.Ty = node.Expr.Ty.Ptr_to
         return node
     case ND_RETURN:
         node.Expr = walk(node.Expr, env, true)
@@ -202,7 +202,7 @@ func walk(node *Node, env *Env, decay bool) *Node {
 
         ret := new(Node)
         ret.Op = ND_NUM
-        ret.Ty = &Type{Ty: INT, Ptr_of: nil, Ary_of: nil, Len: 0}
+        ret.Ty = &Type{Ty: INT, Ptr_to: nil, Ary_of: nil, Len: 0}
         ret.Val = Size_of(expr.Ty)
         return ret
     case ND_CALL:

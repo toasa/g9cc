@@ -250,9 +250,9 @@ func gen_expr(node *Node) int {
     case ND_DEREF:
         r := gen_expr(node.Expr)
         // 間接参照(int型のポインタが指すメモリを参照する)のでload命令
-        if node.Expr.Ty.Ptr_of.Ty == CHAR {
+        if node.Expr.Ty.Ptr_to.Ty == CHAR {
             add(IR_LOAD8, r, r)
-        } else if node.Expr.Ty.Ptr_of.Ty == INT {
+        } else if node.Expr.Ty.Ptr_to.Ty == INT {
             add(IR_LOAD32, r, r)
         } else {
             add(IR_LOAD64, r, r)
@@ -304,7 +304,7 @@ func gen_expr(node *Node) int {
         r := nreg
         nreg++
 
-        add(IR_IMM, r, Size_of(node.Lhs.Ty.Ptr_of))
+        add(IR_IMM, r, Size_of(node.Lhs.Ty.Ptr_to))
         add(IR_MUL, rhs, r)
         kill(r)
 

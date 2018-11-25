@@ -168,10 +168,10 @@ func Sb_get(sb *StringBuilder) string {
     return sb.Data
 }
 
-func Ptr_of(base *Type) *Type {
+func Ptr_to(base *Type) *Type {
     ty := new(Type)
     ty.Ty = PTR
-    ty.Ptr_of = base
+    ty.Ptr_to = base
     return ty
 }
 

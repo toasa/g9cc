@@ -10,7 +10,7 @@ var tokens *Vector
 // "tokens.Data[]" array's index
 var pos int = 0
 
-var int_ty Type = Type{Ty: INT, Ptr_of: nil, Ary_of: nil, Len: 0}
+var int_ty Type = Type{Ty: INT, Ptr_to: nil, Ary_of: nil, Len: 0}
 var char_ty Type = Type{Ty: CHAR}
 var null_stmt Node = Node{Op: ND_NULL}
 
@@ -281,7 +281,7 @@ func type_() *Type {
     pos++
 
     for consume('*') {
-        ty = Ptr_of(ty)
+        ty = Ptr_to(ty)
     }
     return ty
 }

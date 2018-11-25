@@ -23,7 +23,7 @@ type StringBuilder struct {
 
 type Type struct {
     Ty int
-    Ptr_of *Type // Pointer
+    Ptr_to *Type // Pointer
     Ary_of *Type // Array
     Len int
 }
