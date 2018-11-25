@@ -88,7 +88,7 @@ func check_lval(node *Node) {
 }
 
 // ASTを渡り歩く
-func walk(env *Env, node *Node, decay bool) *Node {
+func walk(node *Node, env *Env, decay bool) *Node {
     switch node.Op {
     case ND_NUM:
         return node
@@ -138,29 +138,29 @@ func walk(env *Env, node *Node, decay bool) *Node {
         env.vars[node.Name] = var_
 
         if node.Init != nil {
-            node.Init = walk(env, node.Init, true)
+            node.Init = walk(node.Init, env, true)
         }
         return node
     case ND_IF:
-        node.Cond = walk(env, node.Cond, true)
-        node.Then = walk(env, node.Then, true)
+        node.Cond = walk(node.Cond, env, true)
+        node.Then = walk(node.Then, env, true)
         if node.Els != nil {
-            node.Els = walk(env, node.Els, true)
+            node.Els = walk(node.Els, env, true)
         }
         return node
     case ND_FOR:
-        node.Init = walk(env, node.Init, true)
-        node.Cond = walk(env, node.Cond, true)
-        node.Inc = walk(env, node.Inc, true)
-        node.Body = walk(env, node.Body, true)
+        node.Init = walk(node.Init, env, true)
+        node.Cond = walk(node.Cond, env, true)
+        node.Inc = walk(node.Inc, env, true)
+        node.Body = walk(node.Body, env, true)
         return node
     case ND_DO_WHILE:
-        node.Cond = walk(env, node.Cond, true)
-        node.Body = walk(env, node.Body, true)
+        node.Cond = walk(node.Cond, env, true)
+        node.Body = walk(node.Body, env, true)
         return node
     case '+', '-':
-        node.Lhs = walk(env, node.Lhs, true)
-        node.Rhs = walk(env, node.Rhs, true)
+        node.Lhs = walk(node.Lhs, env, true)
+        node.Rhs = walk(node.Rhs, env, true)
 
         if node.Rhs.Ty.Ty == PTR {
             swap(&node.Lhs, &node.Rhs)
@@ -172,33 +172,33 @@ func walk(env *Env, node *Node, decay bool) *Node {
         node.Ty = node.Lhs.Ty
         return node
     case '=':
-        node.Lhs = walk(env, node.Lhs, false)
+        node.Lhs = walk(node.Lhs, env, false)
         check_lval(node.Lhs)
-        node.Rhs = walk(env, node.Rhs, true)
+        node.Rhs = walk(node.Rhs, env, true)
         node.Ty = node.Lhs.Ty
         return node
     case '*', '/', '<', ND_EQ, ND_NE, ND_LOGAND, ND_LOGOR:
-        node.Lhs = walk(env, node.Lhs, true)
-        node.Rhs = walk(env, node.Rhs, true)
+        node.Lhs = walk(node.Lhs, env, true)
+        node.Rhs = walk(node.Rhs, env, true)
         node.Ty = node.Lhs.Ty
         return node
     case ND_ADDR:
-        node.Expr = walk(env, node.Expr, true)
+        node.Expr = walk(node.Expr, env, true)
         check_lval(node.Expr)
         node.Ty = Ptr_of(node.Expr.Ty)
         return node
     case ND_DEREF:
-        node.Expr = walk(env, node.Expr, true)
+        node.Expr = walk(node.Expr, env, true)
         if node.Expr.Ty.Ty != PTR {
             Error("operand must be a pointer")
         }
         node.Ty = node.Expr.Ty.Ptr_of
         return node
     case ND_RETURN:
-        node.Expr = walk(env, node.Expr, true)
+        node.Expr = walk(node.Expr, env, true)
         return node
     case ND_SIZEOF:
-        expr := walk(env, node.Expr, false)
+        expr := walk(node.Expr, env, false)
 
         ret := new(Node)
         ret.Op = ND_NUM
@@ -207,27 +207,27 @@ func walk(env *Env, node *Node, decay bool) *Node {
         return ret
     case ND_CALL:
         for i := 0; i < node.Args.Len; i++ {
-            node.Args.Data[i] = walk(env, node.Args.Data[i].(*Node), true)
+            node.Args.Data[i] = walk(node.Args.Data[i].(*Node), env, true)
         }
         node.Ty = &int_ty
         return node
     case ND_FUNC:
         for i := 0; i < node.Args.Len; i++ {
-            node.Args.Data[i] = walk(env, node.Args.Data[i].(*Node), true)
+            node.Args.Data[i] = walk(node.Args.Data[i].(*Node), env, true)
         }
-        node.Body = walk(env, node.Body, true)
+        node.Body = walk(node.Body, env, true)
         return node
     case ND_COMP_STMT:
         newenv := new_env(env)
         for i := 0; i < node.Stmts.Len; i++ {
-            node.Stmts.Data[i] = walk(newenv, node.Stmts.Data[i].(*Node), true)
+            node.Stmts.Data[i] = walk(node.Stmts.Data[i].(*Node), newenv, true)
         }
         return node
     case ND_EXPR_STMT:
-        node.Expr = walk(env, node.Expr, true)
+        node.Expr = walk(node.Expr, env, true)
         return node
     case ND_STMT_EXPR:
-        node.Body = walk(env, node.Body, true)
+        node.Body = walk(node.Body, env, true)
         node.Ty = &int_ty
         return node
     case ND_NULL:
@@ -259,7 +259,7 @@ func Sema(nodes *Vector) *Vector {
 
         stacksize = 0
 
-        walk(topenv, node, true)
+        walk(node, topenv, true)
         node.Stacksize = stacksize
     }
 
