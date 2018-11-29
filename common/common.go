@@ -9,7 +9,6 @@ type Vector struct {
     Len int
 }
 
-
 type Map struct {
     Keys *Vector
     Vals *Vector
@@ -23,9 +22,19 @@ type StringBuilder struct {
 
 type Type struct {
     Ty int
-    Ptr_to *Type // Pointer
+    Size int
+    Align int
+
+    // Pointer
+    Ptr_to *Type
+
+    // Array
     Ary_of *Type // Array
     Len int
+
+    // Struct
+    Members *Vector
+    Offset int
 }
 
 // token.go
@@ -37,6 +46,7 @@ const (
     TK_EXTERN // "extern"
     TK_INT // "int"
     TK_CHAR // "char"
+    TK_STRUCT // "struct"
     TK_IF // "if"
     TK_ELSE // "else"
     TK_FOR // "for"
@@ -71,6 +81,7 @@ const (
     ND_NUM = iota + 256 // number literal
     ND_STR // String literal
     ND_IDENT // identifier
+    ND_STRUCT // Struct
     ND_VARDEF // Variable definition
     ND_LVAR // Local variable reference
     ND_GVAR // Glocal variable reference
@@ -99,6 +110,7 @@ const (
     CHAR
     PTR
     ARY
+    STRUCT
 )
 
 type Node struct {
@@ -116,6 +128,9 @@ type Node struct {
     Is_extern bool
     Data string
     Len int
+
+    // Struct
+    Members *Vector
 
     // "if" (cond) then "else" els
     // "for" (init; cond; inc) body

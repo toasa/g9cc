@@ -10,8 +10,6 @@ var tokens *Vector
 // "tokens.Data[]" array's index
 var pos int = 0
 
-var int_ty Type = Type{Ty: INT, Ptr_to: nil, Ary_of: nil, Len: 0}
-var char_ty Type = Type{Ty: CHAR}
 var null_stmt Node = Node{Op: ND_NULL}
 
 func expect(ty int) {
@@ -20,6 +18,22 @@ func expect(ty int) {
         Error(fmt.Sprintf("%c (%d) expected, but got %c (%d)", ty, ty, t.Ty, t.Ty))
     }
     pos++
+}
+
+func new_prim_ty(ty, size int) *Type {
+    ret := new(Type)
+    ret.Ty = ty
+    ret.Size = size
+    ret.Align = size
+    return ret
+}
+
+func char_ty() *Type {
+    return new_prim_ty(CHAR, 1)
+}
+
+func int_ty() *Type {
+    return new_prim_ty(INT, 4)
 }
 
 func consume(ty int) bool {
@@ -32,14 +46,32 @@ func consume(ty int) bool {
     }
 }
 
-func get_type() *Type {
+func is_typename() bool {
+    t := tokens.Data[pos].(*Token)
+    return t.Ty == TK_INT || t.Ty == TK_CHAR || t.Ty == TK_STRUCT
+}
+
+func read_type() *Type {
     t := tokens.Data[pos].(*Token)
     if t.Ty == TK_INT {
-        return &int_ty
+        pos++
+        return int_ty()
     }
     if t.Ty == TK_CHAR {
-        return &char_ty
+        pos++
+        return char_ty()
     }
+
+    if t.Ty == TK_STRUCT {
+        pos++
+        expect('{')
+        members := New_vec()
+        for !consume('}') {
+            Vec_push(members, decl())
+        }
+        return Struct_of(members)
+    }
+
     return nil
 }
 
@@ -78,14 +110,15 @@ func primary() *Node {
     node := new(Node)
 
     if t.Ty == TK_NUM {
-        node.Ty = &int_ty
+        node.Ty = int_ty()
         node.Op = ND_NUM
         node.Val = t.Val
         return node
     }
 
     if t.Ty == TK_STR {
-        node.Ty = Ary_of(&char_ty, len(t.Str))
+        // 文字列はchar型の配列として扱う
+        node.Ty = Ary_of(char_ty(), len(t.Str))
         node.Op = ND_STR
         node.Data = t.Str
         node.Len = t.Len
@@ -277,11 +310,10 @@ func assign() *Node {
 // 型宣言を読み取る. ex. int a, int **b,...
 func type_() *Type {
     t := tokens.Data[pos].(*Token)
-    ty := get_type()
+    ty := read_type()
     if ty == nil  {
         Error(fmt.Sprintf("typename expected, but got %s", t.Input))
     }
-    pos++
 
     for consume('*') {
         ty = Ptr_to(ty)
@@ -358,7 +390,7 @@ func stmt() *Node {
     t := tokens.Data[pos].(*Token)
 
     switch t.Ty {
-    case TK_INT, TK_CHAR:
+    case TK_INT, TK_CHAR, TK_STRUCT:
         return decl()
     case TK_IF:
         pos++
@@ -377,9 +409,7 @@ func stmt() *Node {
         pos++
         node.Op = ND_FOR
         expect('(')
-        // node.Init = assign()
-        // expect(';')
-        if get_type() != nil {
+        if is_typename() {
             node.Init = decl()
         } else {
             node.Init = expr_stmt()
@@ -497,7 +527,7 @@ func toplevel() *Node {
         node.Is_extern = true
     } else {
         // node.Data = ""
-        node.Len = Size_of(node.Ty)
+        node.Len = node.Ty.Size
     }
 
     expect(';')

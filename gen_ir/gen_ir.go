@@ -34,13 +34,12 @@ func label(x int) {
 }
 
 func choose_insn(node *Node, op8, op32, op64 int) int {
-    sz := Size_of(node.Ty)
-    if sz == 1 {
+    if node.Ty.Size == 1 {
         return op8
-    } else if sz == 4 {
+    } else if node.Ty.Size == 4 {
         return op32
     }
-    Assert(sz == 8, "unmatched size")
+    Assert(node.Ty.Size == 8, "unmatched size")
     return op64
 }
 
@@ -215,7 +214,7 @@ func gen_expr(node *Node) int {
         r := nreg
         nreg++
 
-        add(IR_IMM, r, Size_of(node.Lhs.Ty.Ptr_to))
+        add(IR_IMM, r, node.Lhs.Ty.Ptr_to.Size)
         add(IR_MUL, rhs, r)
         kill(r)
 

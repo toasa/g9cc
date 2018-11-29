@@ -138,6 +138,10 @@ try 8 'int main() { return 3 + ({ return 5; }); }'
 
 try 1 'int main() { ; return 1; }'
 
+try 4 'int main() { struct { int a; } x; return sizeof(x); }'
+try 8 'int main() { struct { char a; int b; } x; return sizeof(x); }'
+try 12 'int main() { struct { char a; char b; int c; char d; } x; return sizeof(x); }'
+
 try2 46 'test.c'
 try2 55 'fib.c'
 

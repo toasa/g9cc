@@ -10,14 +10,13 @@ import (
     "fmt"
 )
 
-var int_ty Type = Type{Ty: INT, Ptr_to: nil, Ary_of: nil, Len: 0}
+var int_ty Type = Type{Ty: INT, Size: 4, Align: 4}
 
 // Compound statement( {...; ...; ...;} )内に変数のスコープを制限するための構造体Env.
 // 各comp stmtごとに変数を登録するためのmap, varsを持っている
 type Env struct {
     // 各識別子において、rbpからのoffsetを登録するための辞書
     vars map[string]interface{}
-
     next *Env
 }
 
@@ -101,6 +100,7 @@ func walk(node *Node, env *Env, decay bool) *Node {
     case ND_NUM:
         return node
     case ND_STR:
+        // 文字列はグローバル変数として扱う
         var_ := new_global(node.Ty, fmt.Sprintf("L_.str%d", str_label),
             node.Data, node.Len)
         str_label++
@@ -133,11 +133,8 @@ func walk(node *Node, env *Env, decay bool) *Node {
         ret.Name = var_.Name
         return maybe_decay(ret, decay)
     case ND_VARDEF:
-        // varsに識別子の登録がされていない場合
-        // 識別子をメモリ上へstoreしたり、メモリからloadする時のために、
-        // base pointerからの距離を, map varsに格納しておく。
-        stacksize = Roundup(stacksize, Align_of(node.Ty))
-        stacksize += Size_of(node.Ty)
+        stacksize = Roundup(stacksize, node.Ty.Align)
+        stacksize += node.Ty.Size
         node.Offset = stacksize
 
         var_ := new(Var)
@@ -208,10 +205,10 @@ func walk(node *Node, env *Env, decay bool) *Node {
         return node
     case ND_SIZEOF:
         expr := walk(node.Expr, env, false)
-        return new_int(Size_of(expr.Ty))
+        return new_int(expr.Ty.Size)
     case ND_ALIGNOF:
         expr := walk(node.Expr, env, false)
-        return new_int(Align_of(expr.Ty))
+        return new_int(expr.Ty.Align)
     case ND_CALL:
         for i := 0; i < node.Args.Len; i++ {
             node.Args.Data[i] = walk(node.Args.Data[i].(*Node), env, true)

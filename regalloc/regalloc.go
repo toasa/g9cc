@@ -40,6 +40,7 @@ func alloc(ir_reg int) int {
 }
 
 func visit(irv *Vector) {
+    // r0 is a reserved register that is always mapped to base pointer(rbp)
     reg_map[0] = 0
     used[0] = true
 

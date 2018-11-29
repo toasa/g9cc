@@ -50,6 +50,7 @@ func main() {
 
     var dump_ir1 bool
     var dump_ir2 bool
+    var dump_token bool
     var input string
 
     var argc int = len(os.Args)
@@ -62,6 +63,9 @@ func main() {
         input = os.Args[2]
     } else if (argc == 3 && (os.Args[1] == "-export-file")) {
         input = read_file(os.Args[2])
+    } else if (argc == 3 && (os.Args[1] == "-dump-token")) {
+        dump_token = true
+        input = os.Args[2]
     } else {
         if argc != 2 {
             Error("Usage: g9cc [-test] [-dump-ir1] [-dump-ir2] <code>")
@@ -71,7 +75,9 @@ func main() {
 
     // 標準入力からの文字列に終端文字を追加する. parseをかんたんにするため
     var tokens *Vector = token.Tokenize(input + "\000")
-    // PrintVector(tokens)
+    if dump_token {
+        PrintVector(tokens)
+    }
 
     var nodes *Vector = parse.Parse(tokens)
     // PrintVector(node)

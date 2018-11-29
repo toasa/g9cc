@@ -171,6 +171,8 @@ func Sb_get(sb *StringBuilder) string {
 func Ptr_to(base *Type) *Type {
     ty := new(Type)
     ty.Ty = PTR
+    ty.Size = 8
+    ty.Align = 8
     ty.Ptr_to = base
     return ty
 }
@@ -178,38 +180,38 @@ func Ptr_to(base *Type) *Type {
 func Ary_of(base *Type, len_ int) *Type{
     ty := new(Type)
     ty.Ty = ARY
+    ty.Size = base.Size * len_
+    ty.Align = base.Align
     ty.Ary_of = base
     ty.Len = len_
     return ty
 }
 
-func Size_of(ty *Type) int {
-    if ty.Ty == CHAR {
-        return 1
-    }
-    if ty.Ty == INT {
-        return 4
-    }
-    if ty.Ty == PTR {
-        return 8
-    }
-    Assert(ty.Ty == ARY, "ty.Ty is not ARY")
-    return Size_of(ty.Ary_of) * ty.Len
-}
+func Struct_of(members *Vector) *Type {
+    ty := new(Type)
+    ty.Ty = STRUCT
+    ty.Members = New_vec()
 
-func Align_of(ty *Type) int {
-    if ty.Ty == CHAR {
-        return 1
-    } else if ty.Ty == INT {
-        return 4
-    } else if ty.Ty == PTR {
-        return 8
+    var off int = 0
+    for i := 0; i < members.Len; i++ {
+        node := members.Data[i].(*Node)
+        Assert(node.Op == ND_VARDEF, "node.Op is not ND_VARDEF")
+
+        t := node.Ty
+        off = Roundup(off, t.Align)
+        t.Offset = off
+        off += t.Size
+
+        if ty.Align < node.Ty.Align {
+            ty.Align = node.Ty.Align
+        }
     }
-    Assert(ty.Ty == ARY, "ty.Ty is not ARY")
-    return Align_of(ty.Ary_of)
+
+    ty.Size = Roundup(off, ty.Align)
+    return ty
 }
 
 func Roundup(x, align int) int {
     // ^: complement operator
-    return x + align - 1 & ^(align - 1)
+    return (x + align - 1) & (^(align - 1))
 }
