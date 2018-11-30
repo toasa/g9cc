@@ -7,11 +7,23 @@ import (
     // "github.com/k0kubun/pp"
 )
 
+type Env struct {
+    tags map[string]interface{}
+    next *Env
+}
+
 var tokens *Vector
 // "tokens.Data[]" array's index
 var pos int = 0
-
+var env *Env
 var null_stmt Node = Node{Op: ND_NULL}
+
+func new_env(next *Env) *Env {
+    env := new(Env)
+    env.tags = make(map[string]interface{})
+    env.next = next
+    return env
+}
 
 func expect(ty int) {
     t, _ := tokens.Data[pos].(*Token)
@@ -65,10 +77,38 @@ func read_type() *Type {
 
     if t.Ty == TK_STRUCT {
         pos++
-        expect('{')
-        members := New_vec()
-        for !consume('}') {
-            Vec_push(members, decl())
+        // expect('{')
+        // members := New_vec()
+        // for !consume('}') {
+        //     Vec_push(members, decl())
+        // }
+
+        var tag string = ""
+        t := tokens.Data[pos].(*Token)
+        if t.Ty == TK_IDENT {
+            pos++
+            tag = t.Name
+        }
+
+        var members *Vector = nil
+        if consume('{') {
+            members = New_vec()
+            for !consume('}') {
+                Vec_push(members, decl())
+            }
+        }
+
+        if tag == "" && members == nil {
+            Error("bad struct definition")
+        }
+
+        if tag != "" && members != nil {
+            env.tags[tag] = members
+        } else if ( tag != "" && members == nil) {
+            members = env.tags[tag].(*Vector)
+            if members == nil {
+                Error(fmt.Sprintf("incomplete type: %s", tag))
+            }
         }
 
         return Struct_of(members)
@@ -490,11 +530,13 @@ func compound_stmt() *Node {
     node.Op = ND_COMP_STMT
     node.Stmts = New_vec()
 
+    env := new_env(env)
     for !consume('}') {
         // 関数の終わり"}"まで
         // 一文(;で終わる文)づつparseし、node.Stmtsにpushする
         Vec_push(node.Stmts, stmt())
     }
+    env = env.next
 
     return node
 }
@@ -551,6 +593,7 @@ func Parse(tokens_ *Vector) *Vector {
     tokens = tokens_
 
     pos = 0
+    env = new_env(env)
     v := New_vec()
 
     for t := tokens.Data[pos].(*Token); t.Ty != TK_EOF; t = tokens.Data[pos].(*Token) {
