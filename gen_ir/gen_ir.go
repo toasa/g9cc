@@ -4,6 +4,7 @@ import (
     . "g9cc/common"
     . "g9cc/util"
     "fmt"
+    // "github.com/k0kubun/pp"
 )
 
 // Compile AST to intermediate code that has infinite number of registers.
@@ -11,8 +12,8 @@ import (
 
 var code *Vector
 // 汎用レジスタの番号
-var nreg int
-var nlabel int
+var nreg int = 1
+var nlabel int = 1
 var return_label int
 var return_reg int
 
@@ -34,6 +35,7 @@ func label(x int) {
 }
 
 func choose_insn(node *Node, op8, op32, op64 int) int {
+
     if node.Ty.Size == 1 {
         return op8
     } else if node.Ty.Size == 4 {
@@ -59,6 +61,16 @@ func gen_lval(node *Node) int {
 
     if node.Op == ND_DEREF {
         return gen_expr(node.Expr)
+    }
+
+    if node.Op == ND_DOT {
+        r1 := gen_lval(node.Expr)
+        r2 := nreg
+        nreg++
+        add(IR_IMM, r2, node.Offset)
+        add(IR_ADD, r1, r2)
+        kill(r2)
+        return r1
     }
 
     if node.Op == ND_LVAR {
@@ -143,7 +155,7 @@ func gen_expr(node *Node) int {
         add(IR_IMM, r1, 1)
         label(y)
         return r1
-    case ND_GVAR, ND_LVAR:
+    case ND_GVAR, ND_LVAR, ND_DOT:
         var r int = gen_lval(node)
         add(load_insn(node), r, r)
         return r
@@ -361,7 +373,6 @@ func gen_stmt(node *Node) {
 func Gen_ir(nodes *Vector) *Vector{
 
     v := New_vec()
-    nlabel = 1
 
     // ===変数名(型)===
     // v(*Vector)

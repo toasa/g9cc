@@ -90,6 +90,7 @@ const (
     ND_DO_WHILE // do-while
     ND_ADDR // address operator ("&")
     ND_DEREF // pointer dereference ("*")
+    ND_DOT // Struct member access
     ND_EQ // ==
     ND_NE // !=
     ND_LOGAND // &&
@@ -132,6 +133,9 @@ type Node struct {
     // Struct
     Members *Vector
 
+    // Struct access
+    Member string
+
     // "if" (cond) then "else" els
     // "for" (init; cond; inc) body
     Cond *Node // condtion in IF stmt
@@ -146,7 +150,7 @@ type Node struct {
     Stacksize int
     Globals *Vector
 
-    // Local variable
+    // Offset from BP or begining of a struct
     Offset int
 
     // Function call

@@ -190,7 +190,7 @@ func Ary_of(base *Type, len_ int) *Type{
 func Struct_of(members *Vector) *Type {
     ty := new(Type)
     ty.Ty = STRUCT
-    ty.Members = New_vec()
+    ty.Members = members
 
     var off int = 0
     for i := 0; i < members.Len; i++ {

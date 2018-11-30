@@ -8,12 +8,12 @@ import (
 )
 
 // Register allocator
-var used []bool
+var used []bool = make([]bool, Len_Regs)
 
 // IRの命令数分の要素をもつ配列(Alloc_regs()で初期化)
 // 各中間表現にどのレジスタを割り当てるかを記録する配列
 // 添字: 中間表現の順番, 要素: （レジスタの配列Regsの）何番目のレジスタを割り当てるか
-var reg_map []int
+var reg_map [8192]int
 
 func alloc(ir_reg int) int {
 
@@ -70,15 +70,19 @@ func visit(irv *Vector) {
 
 // 中間表現の命令配列fnsの各要素に対し、必要ならレジスタを割り当てていく
 func Alloc_regs(fns *Vector) {
+    for i := 0; i < len(reg_map); i++ {
+        reg_map[i] = -1
+    }
+    //used = make([]bool, Len_Regs)
+
     for i := 0; i < fns.Len; i++ {
         fn := fns.Data[i].(*Function)
 
-        reg_map = make([]int, fn.Ir.Len)
+        // reg_map = make([]int, fn.Ir.Len)
         for j := 0; j < fn.Ir.Len; j++ {
             reg_map[j] = -1
         }
-
-        used = make([]bool, Len_Regs)
+        //used = make([]bool, Len_Regs)
 
         visit(fn.Ir)
     }

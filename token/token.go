@@ -189,7 +189,7 @@ func Tokenize(s string) *Vector {
             }
 
             // Single-letter token
-            if strings.Contains("+-*/;=(),{}<>[]&", string(s[i_input])) {
+            if strings.Contains("+-*/;=(),{}<>[]&.", string(s[i_input])) {
                 add_token(v, int(s[i_input]), string(s[i_input]))
                 i_input++
                 continue

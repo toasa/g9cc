@@ -8,6 +8,7 @@ import (
     . "g9cc/common"
     . "g9cc/util"
     "fmt"
+    // "github.com/k0kubun/pp"
 )
 
 var int_ty Type = Type{Ty: INT, Size: 4, Align: 4}
@@ -64,6 +65,7 @@ func maybe_decay(base *Node, decay bool) *Node {
         return base
     }
 
+    // decayがtrueでかつ、base.Ty.TyがARYだった場合
     node := new(Node)
     node.Op = ND_ADDR
     node.Ty = Ptr_to(base.Ty.Ary_of)
@@ -80,7 +82,7 @@ func maybe_decay(base *Node, decay bool) *Node {
 
 func check_lval(node *Node) {
     op := node.Op
-    if op == ND_LVAR || op == ND_GVAR || op == ND_DEREF {
+    if op == ND_LVAR || op == ND_GVAR || op == ND_DEREF || op == ND_DOT {
         return
     }
     Error(fmt.Sprintf("not an lvalue: %d (%s)", op, node.Name))
@@ -113,6 +115,9 @@ func walk(node *Node, env *Env, decay bool) *Node {
         return maybe_decay(ret, decay)
     case ND_IDENT:
         var_ := find(env, node.Name)
+
+        // pp.Print(node)
+        // fmt.Println("------------------")
 
         if var_ == nil {
             Error(fmt.Sprintf("undefined variable: %s", node.Name))
@@ -183,6 +188,23 @@ func walk(node *Node, env *Env, decay bool) *Node {
         node.Rhs = walk(node.Rhs, env, true)
         node.Ty = node.Lhs.Ty
         return node
+    case ND_DOT:
+        node.Expr = walk(node.Expr, env, true)
+        if node.Expr.Ty.Ty != STRUCT {
+            Error("struct expect before '.'")
+        }
+
+        ty := node.Expr.Ty
+        for i := 0; i < ty.Members.Len; i++ {
+            m := ty.Members.Data[i].(*Node)
+            if m.Name != node.Member {
+                continue
+            }
+            node.Ty = m.Ty
+            node.Offset = m.Ty.Offset
+            return node
+        }
+        Error(fmt.Sprintf("member missing: %s", node.Member))
     case '*', '/', '<', ND_EQ, ND_NE, ND_LOGAND, ND_LOGOR:
         node.Lhs = walk(node.Lhs, env, true)
         node.Rhs = walk(node.Rhs, env, true)

@@ -14,7 +14,7 @@ var Irinfo_arr []IRInfo = []IRInfo{
     {"SUB", IR_TY_REG_REG},
     {"MUL", IR_TY_REG_REG},
     {"DIV", IR_TY_REG_REG},
-    {"MOV", IR_TY_REG_IMM},
+    {"IMM", IR_TY_REG_IMM},
     {"BPREL", IR_TY_REG_IMM},
     {"MOV", IR_TY_REG_REG},
     {"RET", IR_TY_REG},

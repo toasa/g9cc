@@ -46,6 +46,9 @@ try 4 'int main() {
     ***************************/
     return 4;
     }'
+
+try 5 'int main() { int a = 5; int *p = &a; return *p; }'
+
 try 33 'int main() { return 33; }'
 try 10 'int main() { return 2*3+4; }'
 try 14 'int main() { return 2+3*4; }'
@@ -144,5 +147,8 @@ try 12 'int main() { struct { char a; char b; int c; char d; } x; return sizeof(
 
 try2 46 'test.c'
 try2 55 'fib.c'
+
+try 3 'int main() { struct { int a; } x; x.a=3; return x.a; }'
+try 8 'int main() { struct { char a; int b;} x; x.a=3; x.b=5; return x.a+x.b; }'
 
 echo OK

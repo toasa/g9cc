@@ -4,6 +4,7 @@ import (
     . "g9cc/common"
     . "g9cc/util"
     "fmt"
+    // "github.com/k0kubun/pp"
 )
 
 var tokens *Vector
@@ -69,6 +70,7 @@ func read_type() *Type {
         for !consume('}') {
             Vec_push(members, decl())
         }
+
         return Struct_of(members)
     }
 
@@ -90,8 +92,17 @@ func new_expr(op int, expr *Node) *Node {
     return node
 }
 
+func ident() string {
+    t := tokens.Data[pos].(*Token)
+    pos++
+    if t.Ty != TK_IDENT {
+        Error(fmt.Sprintf("identifier expected, but got %s", t.Input))
+    }
+    return t.Name
+}
+
 func primary() *Node {
-    t, _ := tokens.Data[pos].(*Token)
+    t := tokens.Data[pos].(*Token)
     pos++
 
     if t.Ty == '(' {
@@ -159,6 +170,15 @@ func primary() *Node {
 
 func postfix() *Node {
     lhs := primary()
+
+    if consume('.') {
+        node := new(Node)
+        node.Op = ND_DOT
+        node.Expr = lhs
+        node.Member = ident()
+        return node
+    }
+
     for consume('[') {
         lhs = new_expr(ND_DEREF, new_binop('+', lhs, assign()))
         expect(']')
@@ -346,12 +366,7 @@ func decl() *Node {
     node.Ty = type_()
 
     // Read an indentifier
-    t := tokens.Data[pos].(*Token)
-    if t.Ty != TK_IDENT {
-        Error(fmt.Sprintf("variable name expected, but got %s", t.Input))
-    }
-    node.Name = t.Name
-    pos++
+    node.Name = ident()
 
     // Read the second half of type name (e.g. `[3][5]`)
     node.Ty = read_array(node.Ty)
@@ -369,13 +384,7 @@ func param() *Node {
     node := new(Node)
     node.Op = ND_VARDEF
     node.Ty = type_()
-
-    t := tokens.Data[pos].(*Token)
-    if t.Ty != TK_IDENT {
-        Error(fmt.Sprintf("parameter name expected, but got %s", t.Input))
-    }
-    node.Name = t.Name
-    pos++
+    node.Name = ident()
     return node
 }
 
@@ -489,12 +498,8 @@ func toplevel() *Node {
         t := tokens.Data[pos].(*Token)
         Error(fmt.Sprintf("typename expected, but got %s", t.Input))
     }
-    t := tokens.Data[pos].(*Token)
-    if t.Ty != TK_IDENT {
-        Error(fmt.Sprintf("function or variable name expected, but got %s", t.Input))
-    }
-    name := t.Name
-    pos++
+
+    name := ident()
 
     // Function
     if consume('(') {
