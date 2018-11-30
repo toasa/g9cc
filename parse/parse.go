@@ -175,7 +175,15 @@ func postfix() *Node {
         node := new(Node)
         node.Op = ND_DOT
         node.Expr = lhs
-        node.Member = ident()
+        node.Name = ident()
+        return node
+    }
+
+    if consume(TK_ARROW) {
+        node := new(Node)
+        node.Op = ND_DOT
+        node.Expr = new_expr(ND_DEREF, lhs)
+        node.Name = ident()
         return node
     }
 

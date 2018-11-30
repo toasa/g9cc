@@ -43,6 +43,7 @@ const (
     TK_NUM = iota + 256 // Number Literal
     TK_STR // String literal
     TK_IDENT // Identifier
+    TK_ARROW // ->
     TK_EXTERN // "extern"
     TK_INT // "int"
     TK_CHAR // "char"
@@ -130,11 +131,11 @@ type Node struct {
     Data string
     Len int
 
-    // Struct
-    Members *Vector
-
-    // Struct access
-    Member string
+    // // Struct
+    // Members *Vector
+    //
+    // // Struct access
+    // Member string
 
     // "if" (cond) then "else" els
     // "for" (init; cond; inc) body

@@ -197,14 +197,14 @@ func walk(node *Node, env *Env, decay bool) *Node {
         ty := node.Expr.Ty
         for i := 0; i < ty.Members.Len; i++ {
             m := ty.Members.Data[i].(*Node)
-            if m.Name != node.Member {
+            if m.Name != node.Name {
                 continue
             }
             node.Ty = m.Ty
             node.Offset = m.Ty.Offset
             return node
         }
-        Error(fmt.Sprintf("member missing: %s", node.Member))
+        Error(fmt.Sprintf("member missing: %s", node.Name))
     case '*', '/', '<', ND_EQ, ND_NE, ND_LOGAND, ND_LOGOR:
         node.Lhs = walk(node.Lhs, env, true)
         node.Rhs = walk(node.Rhs, env, true)
