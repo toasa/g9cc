@@ -385,12 +385,27 @@ func logor() *Node {
     return err
 }
 
+func conditional() *Node {
+    cond := logor()
+    if !consume('?') {
+        return cond
+    }
+
+    node := new(Node)
+    node.Op = '?'
+    node.Cond = cond
+    node.Then = assign()
+    expect(':')
+    node.Els = assign()
+    return node
+}
+
 // '='を処理する
 func assign() *Node {
-    lhs := logor()
+    lhs := conditional()
     if consume('=') {
         // =文の場合
-        return new_binop('=', lhs, logor())
+        return new_binop('=', lhs, conditional())
     }
     // =文でない場合
     return lhs
