@@ -166,4 +166,6 @@ try 8 'int main() {
     return x.a[0].b + x.a[0].c[1];
 }'
 
+try 3 'int main() { typedef int foo; foo x = 3; return x; }'
+
 echo OK

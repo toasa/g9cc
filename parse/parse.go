@@ -8,6 +8,7 @@ import (
 )
 
 type Env struct {
+    typedefs map[string]interface{}
     tags map[string]interface{}
     next *Env
 }
@@ -20,6 +21,7 @@ var null_stmt Node = Node{Op: ND_NULL}
 
 func new_env(next *Env) *Env {
     env := new(Env)
+    env.typedefs = make(map[string]interface{})
     env.tags = make(map[string]interface{})
     env.next = next
     return env
@@ -61,11 +63,24 @@ func consume(ty int) bool {
 
 func is_typename() bool {
     t := tokens.Data[pos].(*Token)
+    if t.Ty == TK_IDENT {
+        _, ok := env.typedefs[t.Name]
+        return ok
+    }
     return t.Ty == TK_INT || t.Ty == TK_CHAR || t.Ty == TK_STRUCT
 }
 
 func read_type() *Type {
     t := tokens.Data[pos].(*Token)
+
+    if t.Ty == TK_IDENT {
+        ty := env.typedefs[t.Name].(*Type)
+        if ty != nil {
+            pos++
+        }
+        return ty
+    }
+
     if t.Ty == TK_INT {
         pos++
         return int_ty()
@@ -452,6 +467,12 @@ func stmt() *Node {
     t := tokens.Data[pos].(*Token)
 
     switch t.Ty {
+    case TK_TYPEDEF:
+        pos++
+        node := decl()
+        Assert(node.Name != "", "")
+        env.typedefs[node.Name] = node.Ty
+        return &null_stmt
     case TK_INT, TK_CHAR, TK_STRUCT:
         return decl()
     case TK_IF:
@@ -521,7 +542,9 @@ func stmt() *Node {
         pos++
         return &null_stmt
     default:
-        // 式文
+        if is_typename() {
+            return decl()
+        }
         return expr_stmt()
     }
 

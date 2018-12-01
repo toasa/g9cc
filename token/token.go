@@ -28,8 +28,8 @@ var symbols = []struct {
     {"extern", TK_EXTERN}, {"for", TK_FOR},
     {"if", TK_IF}, {"int", TK_INT},
     {"return", TK_RETURN}, {"sizeof", TK_SIZEOF},
-    {"struct", TK_STRUCT}, {"while", TK_WHILE},
-    {"!=", TK_NE}, {"&&", TK_LOGAND},
+    {"struct", TK_STRUCT}, {"typedef", TK_TYPEDEF},
+    {"while", TK_WHILE}, {"!=", TK_NE}, {"&&", TK_LOGAND},
     {"->", TK_ARROW}, {"==", TK_EQ},
     {"||", TK_LOGOR}, {"NULL", 0},
 }
