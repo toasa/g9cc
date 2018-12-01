@@ -220,6 +220,9 @@ func walk(node *Node, env *Env, decay bool) *Node {
         if node.Expr.Ty.Ty != PTR {
             Error("operand must be a pointer")
         }
+        if node.Expr.Ty.Ptr_to.Ty == VOID {
+            Error("cannot dereference void pointer")
+        }
         node.Ty = node.Expr.Ty.Ptr_to
         return node
     case ND_RETURN:

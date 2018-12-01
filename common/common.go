@@ -48,6 +48,7 @@ const (
     TK_TYPEDEF // "typedef"
     TK_INT // "int"
     TK_CHAR // "char"
+    TK_VOID // "void"
     TK_STRUCT // "struct"
     TK_IF // "if"
     TK_ELSE // "else"
@@ -111,6 +112,7 @@ const (
 const (
     INT = iota
     CHAR
+    VOID
     PTR
     ARY
     STRUCT

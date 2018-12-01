@@ -43,6 +43,10 @@ func new_prim_ty(ty, size int) *Type {
     return ret
 }
 
+func void_ty() *Type {
+    return new_prim_ty(VOID, 0)
+}
+
 func char_ty() *Type {
     return new_prim_ty(CHAR, 1)
 }
@@ -67,37 +71,31 @@ func is_typename() bool {
         _, ok := env.typedefs[t.Name]
         return ok
     }
-    return t.Ty == TK_INT || t.Ty == TK_CHAR || t.Ty == TK_STRUCT
+    return t.Ty == TK_INT || t.Ty == TK_CHAR ||
+    t.Ty == TK_STRUCT || t.Ty == TK_VOID
 }
 
 func read_type() *Type {
     t := tokens.Data[pos].(*Token)
+    pos++
 
     if t.Ty == TK_IDENT {
         ty := env.typedefs[t.Name].(*Type)
-        if ty != nil {
-            pos++
+        if ty == nil {
+            pos--
         }
         return ty
     }
-
     if t.Ty == TK_INT {
-        pos++
         return int_ty()
     }
     if t.Ty == TK_CHAR {
-        pos++
         return char_ty()
     }
-
+    if t.Ty == TK_VOID {
+        return void_ty()
+    }
     if t.Ty == TK_STRUCT {
-        pos++
-        // expect('{')
-        // members := New_vec()
-        // for !consume('}') {
-        //     Vec_push(members, decl())
-        // }
-
         var tag string = ""
         t := tokens.Data[pos].(*Token)
         if t.Ty == TK_IDENT {
@@ -129,6 +127,7 @@ func read_type() *Type {
         return Struct_of(members)
     }
 
+    pos--
     return nil
 }
 
@@ -438,6 +437,9 @@ func decl() *Node {
 
     // Read the second half of type name (e.g. `[3][5]`)
     node.Ty = read_array(node.Ty)
+    if node.Ty.Ty == VOID {
+        Error(fmt.Sprintf("void variable: %s", node.Name))
+    }
 
     // Read an initializer
     if consume('=') {
