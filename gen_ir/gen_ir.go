@@ -242,6 +242,14 @@ func gen_expr(node *Node) int {
         return gen_binop(IR_DIV, node)
     case '<':
         return gen_binop(IR_LT, node)
+    case '!':
+        lhs := gen_expr(node.Expr)
+        rhs := nreg
+        nreg++
+        add(IR_IMM, rhs, 0)
+        add(IR_EQ, lhs, rhs)
+        kill(rhs)
+        return lhs
     default:
         Assert(false, "unknown AST type")
     }

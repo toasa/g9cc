@@ -210,6 +210,10 @@ func walk(node *Node, env *Env, decay bool) *Node {
         node.Rhs = walk(node.Rhs, env, true)
         node.Ty = node.Lhs.Ty
         return node
+    case '!':
+        node.Expr = walk(node.Expr, env, true)
+        node.Ty = node.Expr.Ty
+        return node
     case ND_ADDR:
         node.Expr = walk(node.Expr, env, true)
         check_lval(node.Expr)
