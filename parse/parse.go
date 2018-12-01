@@ -96,6 +96,7 @@ func read_type() *Type {
         return void_ty()
     }
     if t.Ty == TK_STRUCT {
+
         var tag string = ""
         t := tokens.Data[pos].(*Token)
         if t.Ty == TK_IDENT {
@@ -167,7 +168,7 @@ func primary() *Node {
             expect(')')
             return node
         }
-        var node *Node = assign()
+        var node *Node = expr()
         expect(')')
         return node
     }
@@ -394,21 +395,28 @@ func conditional() *Node {
     node := new(Node)
     node.Op = '?'
     node.Cond = cond
-    node.Then = assign()
+    node.Then = expr()
     expect(':')
-    node.Els = assign()
+    node.Els = conditional()
     return node
 }
 
 // '='を処理する
 func assign() *Node {
     lhs := conditional()
-    if consume('=') {
-        // =文の場合
-        return new_binop('=', lhs, conditional())
+    if !consume('=') {
+        return lhs
     }
-    // =文でない場合
-    return lhs
+    // '='文の場合
+    return new_binop('=', lhs, conditional())
+}
+
+func expr() *Node {
+    lhs := assign()
+    if !consume(',') {
+        return lhs
+    }
+    return new_binop(',', lhs, expr())
 }
 
 // typeは予約語ゆえ
@@ -429,7 +437,7 @@ func type_() *Type {
 func read_array(ty *Type) *Type {
     v := New_vec()
     for consume('[') {
-        len_ := primary()
+        len_ := expr()
         if len_.Op != ND_NUM {
             Error("number expected")
         }
@@ -477,7 +485,7 @@ func param() *Node {
 }
 
 func expr_stmt() *Node {
-    node := new_expr(ND_EXPR_STMT, assign())
+    node := new_expr(ND_EXPR_STMT, expr())
     expect(';')
     return node
 }
@@ -499,7 +507,7 @@ func stmt() *Node {
         pos++
         node.Op = ND_IF
         expect('(')
-        node.Cond = assign()
+        node.Cond = expr()
         expect(')')
 
         node.Then = stmt()
@@ -517,9 +525,9 @@ func stmt() *Node {
         } else {
             node.Init = expr_stmt()
         }
-        node.Cond = assign()
+        node.Cond = expr()
         expect(';')
-        node.Inc = new_expr(ND_EXPR_STMT, assign())
+        node.Inc = new_expr(ND_EXPR_STMT, expr())
         expect(')')
         node.Body = stmt()
         return node
@@ -530,7 +538,7 @@ func stmt() *Node {
         node.Init = &null_stmt
         node.Inc = &null_stmt
         expect('(')
-        node.Cond = assign()
+        node.Cond = expr()
         expect(')')
         node.Body = stmt()
         return node
@@ -540,14 +548,14 @@ func stmt() *Node {
         node.Body = stmt()
         expect(TK_WHILE)
         expect('(')
-        node.Cond = assign()
+        node.Cond = expr()
         expect(')')
         expect(';')
         return node
     case TK_RETURN:
         pos++
         node.Op = ND_RETURN
-        node.Expr = assign()
+        node.Expr = expr()
         expect(';')
         return node
     case '{':

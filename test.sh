@@ -174,4 +174,6 @@ try 1 'int main() { return !0; }'
 try 5 'int main() { return 0 ? 3 : 5; }'
 try 3 'int main() { return 1==1 ? 3 : 5; }'
 
+try 3 'int main() { return 1, 2, 3; }'
+
 echo OK

@@ -216,6 +216,11 @@ func walk(node *Node, env *Env, decay bool) *Node {
         node.Rhs = walk(node.Rhs, env, true)
         node.Ty = node.Lhs.Ty
         return node
+    case ',':
+        node.Lhs = walk(node.Lhs, env, true)
+        node.Rhs = walk(node.Rhs, env, true)
+        node.Ty = node.Rhs.Ty
+        return node
     case '!':
         node.Expr = walk(node.Expr, env, true)
         node.Ty = node.Expr.Ty
