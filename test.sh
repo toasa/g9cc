@@ -154,4 +154,16 @@ try 8 'int main() { struct { char a; int b;} x; x.a=3; x.b=5; return x.a+x.b; }'
 try 8 'int main() { struct { char a; int b; } x; struct { char a; int b; } *p = &x; x.a=3; x.b = 5; return p->a+p->b; }'
 try 8 'int main() { struct tag { char a; int b; } x; struct tag *p = &x; x.a=3; x.b = 5; return p->a+p->b; }'
 
+try 8 'int main() {
+    struct {
+        struct {
+            int b;
+            int c[5];
+        } a[2];
+    } x;
+    x.a[0].b = 3;
+    x.a[0].c[1] = 5;
+    return x.a[0].b + x.a[0].c[1];
+}'
+
 echo OK

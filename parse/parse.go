@@ -211,27 +211,32 @@ func primary() *Node {
 func postfix() *Node {
     lhs := primary()
 
-    if consume('.') {
-        node := new(Node)
-        node.Op = ND_DOT
-        node.Expr = lhs
-        node.Name = ident()
-        return node
-    }
+    for {
+        if consume('.') {
+            node := new(Node)
+            node.Op = ND_DOT
+            node.Expr = lhs
+            node.Name = ident()
+            lhs = node
+            continue
+        }
 
-    if consume(TK_ARROW) {
-        node := new(Node)
-        node.Op = ND_DOT
-        node.Expr = new_expr(ND_DEREF, lhs)
-        node.Name = ident()
-        return node
-    }
+        if consume(TK_ARROW) {
+            node := new(Node)
+            node.Op = ND_DOT
+            node.Expr = new_expr(ND_DEREF, lhs)
+            node.Name = ident()
+            lhs = node
+            continue
+        }
 
-    for consume('[') {
-        lhs = new_expr(ND_DEREF, new_binop('+', lhs, assign()))
-        expect(']')
+        if consume('[') {
+            lhs = new_expr(ND_DEREF, new_binop('+', lhs, assign()))
+            expect(']')
+            continue
+        }
+        return lhs
     }
-    return lhs
 }
 
 // 識別子の先頭につく'*' or '&'を読み取る

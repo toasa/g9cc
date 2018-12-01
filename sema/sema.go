@@ -202,7 +202,7 @@ func walk(node *Node, env *Env, decay bool) *Node {
             }
             node.Ty = m.Ty
             node.Offset = m.Ty.Offset
-            return node
+            return maybe_decay(node, decay)
         }
         Error(fmt.Sprintf("member missing: %s", node.Name))
     case '*', '/', '<', ND_EQ, ND_NE, ND_LOGAND, ND_LOGOR:

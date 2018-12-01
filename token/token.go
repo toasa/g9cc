@@ -120,7 +120,7 @@ func Tokenize(s string) *Vector {
     loop:
         for s[i_input] != '\000' {
 
-            // skip white space
+            // skip white space, new line and tub.
             if isspace(s[i_input]) || s[i_input] == '\n' || s[i_input] == '\t'{
                 i_input++
                 continue
