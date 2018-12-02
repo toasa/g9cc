@@ -312,6 +312,10 @@ func rel() *Node {
             lhs = new_binop('<', lhs, add())
         } else if consume('>') {
             lhs = new_binop('<', add(), lhs)
+        } else if consume(TK_LE) {
+            lhs = new_binop(ND_LE, lhs, add())
+        } else if consume(TK_GE) {
+            lhs = new_binop(ND_LE, add(), lhs)
         } else {
             return lhs
         }

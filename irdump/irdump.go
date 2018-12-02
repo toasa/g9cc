@@ -23,6 +23,7 @@ var Irinfo_arr []IRInfo = []IRInfo{
     {"LABEL_ADDR", IR_TY_LABEL_ADDR},
     {"EQ", IR_TY_REG_REG},
     {"NE", IR_TY_REG_REG},
+    {"LE", IR_TY_REG_REG},
     {"LT", IR_TY_REG_REG},
     {"AND", IR_TY_REG_REG},
     {"OR", IR_TY_REG_REG},

@@ -184,4 +184,12 @@ try 5 'int main() { return 6 ^ 3; }'
 try 2 'int main() { return 6 & 3; }'
 try 0 'int main() { return 6 & 0; }'
 
+try 1 'int main() { return 4 <= 5; }'
+try 1 'int main() { return 5 <= 5; }'
+try 0 'int main() { return 6 <= 5; }'
+
+try 0 'int main() { return 4 >= 5; }'
+try 1 'int main() { return 5 >= 5; }'
+try 1 'int main() { return 6 >= 5; }'
+
 echo OK

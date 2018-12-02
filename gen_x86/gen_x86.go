@@ -167,6 +167,8 @@ func gen(fn *Function) {
         case IR_LT:
             // フラグレジスタの値をオペランドに格納
             emit_cmp(ir, "setl")
+        case IR_LE:
+            emit_cmp(ir, "setle")
         case IR_AND:
             fmt.Printf("    and %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
         case IR_OR:

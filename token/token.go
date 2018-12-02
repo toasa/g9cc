@@ -31,7 +31,8 @@ var symbols = []struct {
     {"struct", TK_STRUCT}, {"typedef", TK_TYPEDEF},
     {"void", TK_VOID}, {"while", TK_WHILE},
     {"!=", TK_NE}, {"&&", TK_LOGAND},
-    {"->", TK_ARROW}, {"==", TK_EQ},
+    {"->", TK_ARROW}, {"<=", TK_LE},
+    {"==", TK_EQ}, {">=", TK_GE},
     {"||", TK_LOGOR}, {"NULL", 0},
 }
 
