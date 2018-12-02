@@ -279,150 +279,96 @@ func unary() *Node {
 
 func mul() *Node {
     var lhs *Node = unary()
-
-    for true {
-        t := tokens.Data[pos].(*Token)
-
-        if !(t.Ty == '*' || t.Ty == '/') {
+    for {
+        if consume('*') {
+            lhs = new_binop('*', lhs, unary())
+        } else if consume('/') {
+            lhs = new_binop('/', lhs, unary())
+        } else {
             return lhs
         }
-        // t.Tyが * または　/ の場合
-        pos++
-        lhs = new_binop(t.Ty, lhs, unary())
     }
-
-    // ここには通常到達しない
-    var err *Node
-    return err
 }
 
 func add() *Node {
 
     var lhs *Node = mul()
-
-    for true {
-        t := tokens.Data[pos].(*Token)
-
-        if !(t.Ty == '+' || t.Ty == '-') {
+    for {
+        if consume('+') {
+            lhs = new_binop('+', lhs, mul())
+        } else if consume('-') {
+            lhs = new_binop('-', lhs, mul())
+        } else {
             return lhs
         }
-        pos++
-        lhs = new_binop(t.Ty, lhs, mul())
     }
-
-    // 通常ここには到達しない
-    var err *Node
-    return err
 }
 
 // 四則演算(mul(), add())が終わったところでrelを呼び,不等号のチェックを行う
 func rel() *Node {
     var lhs *Node = add()
-    for true {
-        t := tokens.Data[pos].(*Token)
-        if t.Ty == '<' {
-            pos++
+    for {
+        if consume('<') {
             lhs = new_binop('<', lhs, add())
-            continue
-        }
-        if t.Ty == '>' {
-            pos++
+        } else if consume('>') {
             lhs = new_binop('<', add(), lhs)
-            continue
+        } else {
+            return lhs
         }
-
-        return lhs
     }
-
-    err := new(Node)
-    return err
 }
 
 func equality() *Node {
     lhs := rel()
-    for true {
-        t := tokens.Data[pos].(*Token)
-        if t.Ty == TK_EQ {
-            pos++
+    for {
+        if consume(TK_EQ) {
             lhs = new_binop(ND_EQ, lhs, rel())
-            continue
-        }
-        if t.Ty == TK_NE {
-            pos++
+        } else if consume(TK_NE) {
             lhs = new_binop(ND_NE, lhs, rel())
-            continue
+        } else {
+            return lhs
         }
-        return lhs
     }
-
-    err := new(Node)
-    return err
 }
 
 func bit_and() *Node {
     lhs := equality()
-    for {
-        t := tokens.Data[pos].(*Token)
-        if t.Ty != '&' {
-            return lhs
-        }
-        pos++
+    for consume('&') {
         lhs = new_binop('&', lhs, equality())
     }
+    return lhs
 }
 
 func bit_xor() *Node {
     lhs := bit_and()
-    for {
-        t := tokens.Data[pos].(*Token)
-        if t.Ty != '^' {
-            return lhs
-        }
-        pos++
+    for consume('^') {
         lhs = new_binop('^', lhs, bit_and())
     }
+    return lhs
 }
 
 func bit_or() *Node {
     lhs := bit_xor()
-    for {
-        t := tokens.Data[pos].(*Token)
-        if t.Ty != '|' {
-            return lhs
-        }
-        pos++
+    for consume('|') {
         lhs = new_binop('|', lhs, bit_xor())
     }
+    return lhs
 }
 
 func logand() *Node {
     var lhs *Node = bit_or()
-    for true {
-        t := tokens.Data[pos].(*Token)
-        if t.Ty != TK_LOGAND {
-            return lhs
-        }
-        pos++
+    for consume(TK_LOGAND) {
         lhs = new_binop(ND_LOGAND, lhs, bit_or())
     }
-
-    err := new(Node)
-    return err
+    return lhs
 }
 
 func logor() *Node {
     var lhs *Node = logand()
-    for true {
-        t := tokens.Data[pos].(*Token)
-        if t.Ty != TK_LOGOR {
-            return lhs
-        }
-        pos++
+    for consume(TK_LOGOR) {
         lhs = new_binop(ND_LOGOR, lhs, logand())
     }
-
-    err := new(Node)
-    return err
+    return lhs
 }
 
 func conditional() *Node {
