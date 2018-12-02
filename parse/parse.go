@@ -259,11 +259,14 @@ func postfix() *Node {
 
 // 識別子の先頭につく'*' or '&'を読み取る
 func unary() *Node {
+    if consume('-') {
+        return new_expr(ND_NEG, unary())
+    }
     if consume('*') {
-        return new_expr(ND_DEREF, mul())
+        return new_expr(ND_DEREF, unary())
     }
     if consume('&') {
-        return new_expr(ND_ADDR, mul())
+        return new_expr(ND_ADDR, unary())
     }
     if consume('!') {
         return new_expr('!', unary())

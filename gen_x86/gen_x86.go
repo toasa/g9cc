@@ -158,6 +158,8 @@ func gen(fn *Function) {
             // 第２オペランドの実行アドレスを計算し、第１オペランドに格納する
             // 第２オペランドが格納されたアドレスはripによっても変化する？
             fmt.Printf("    lea %s, [rip + %s]\n", Regs[ir.Lhs], ir.Name)
+        case IR_NEG:
+            fmt.Printf("    neg %s\n", Regs[ir.Lhs])
         case IR_EQ:
             // ZFフラグの値をオペランドへ格納
             emit_cmp(ir, "sete")

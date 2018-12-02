@@ -198,4 +198,6 @@ try 4 'int main() { return 16>>2; }'
 try 4 'int main() { return 19 % 5; }'
 try 0 'int main() { return 9 % 3; }'
 
+try 5 'int main() { return -3 + 8; }'
+
 echo OK
