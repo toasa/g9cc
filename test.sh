@@ -195,4 +195,7 @@ try 1 'int main() { return 6 >= 5; }'
 try 8 'int main() { return 1<<3; }'
 try 4 'int main() { return 16>>2; }'
 
+try 4 'int main() { return 19 % 5; }'
+try 0 'int main() { return 9 % 3; }'
+
 echo OK

@@ -232,7 +232,14 @@ func gen(fn *Function) {
             // wordは4byteのこと? => ocは32byte?
             fmt.Printf("    cqo\n")
             fmt.Printf("    div %s\n", Regs[ir.Rhs])
+            // divの商はraxに格納される
             fmt.Printf("    mov %s, rax\n", Regs[ir.Lhs])
+        case IR_MOD:
+            fmt.Printf("    mov rax, %s\n", Regs[ir.Lhs])
+            fmt.Printf("    cqo\n")
+            fmt.Printf("    div %s\n", Regs[ir.Rhs])
+            // divのあまりはraxに格納される
+            fmt.Printf("    mov %s, rdx\n", Regs[ir.Lhs])
         case IR_NOP:
 
         default:

@@ -284,6 +284,8 @@ func mul() *Node {
             lhs = new_binop('*', lhs, unary())
         } else if consume('/') {
             lhs = new_binop('/', lhs, unary())
+        } else if consume('%') {
+            lhs = new_binop('%', lhs, unary())
         } else {
             return lhs
         }
@@ -292,7 +294,7 @@ func mul() *Node {
 
 func add() *Node {
 
-    var lhs *Node = mul()
+    lhs := mul()
     for {
         if consume('+') {
             lhs = new_binop('+', lhs, mul())
