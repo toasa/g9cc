@@ -61,6 +61,8 @@ const (
     TK_GE // >=
     TK_LOGOR // ||
     TK_LOGAND // &&
+    TK_SHL // <<
+    TK_SHR // >>
     TK_RETURN // "return"
     TK_SIZEOF // "sizeof"
     TK_ALIGNOF // "_Alignof"
@@ -101,6 +103,8 @@ const (
     ND_LE // <=
     ND_LOGAND // &&
     ND_LOGOR // ||
+    ND_SHL // <<
+    ND_SHR // >>
     ND_RETURN // "return"
     ND_SIZEOF // "sizeof"
     ND_ALIGNOF // "_Alignof"
@@ -207,6 +211,8 @@ const (
     IR_AND
     IR_OR
     IR_XOR
+    IR_SHL
+    IR_SHR
     IR_JMP
     IR_IF
     IR_UNLESS

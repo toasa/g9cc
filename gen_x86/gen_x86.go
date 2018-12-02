@@ -175,6 +175,13 @@ func gen(fn *Function) {
             fmt.Printf("    or %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
         case IR_XOR:
             fmt.Printf("    xor %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+        case IR_SHL:
+            fmt.Printf("    mov cl, %s\n", Regs8[ir.Rhs])
+            // clレジスタの値だけ%sを左シフト
+            fmt.Printf("    shl %s, cl\n", Regs[ir.Lhs])
+        case IR_SHR:
+            fmt.Printf("    mov cl, %s\n", Regs8[ir.Rhs])
+            fmt.Printf("    shr %s, cl\n", Regs[ir.Lhs])
         case IR_JMP:
             fmt.Printf("    jmp .L%d\n", ir.Lhs)
         case IR_IF:
