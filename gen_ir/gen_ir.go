@@ -98,6 +98,37 @@ func gen_binop(ty int, node *Node) int {
     return lhs
 }
 
+func gen_pre_inc(node *Node, num int) int {
+    addr := gen_lval(node.Expr)
+    val := nreg
+    nreg++
+    add(load_insn(node), val, addr)
+    imm := nreg
+    nreg++
+    add(IR_IMM, imm, num)
+    add(IR_ADD, val, imm)
+    kill(imm)
+    add(store_insn(node), addr, val)
+    kill(addr)
+    return val
+}
+
+func gen_post_inc(node *Node, num int) int {
+    addr := gen_lval(node.Expr)
+    val := nreg
+    nreg++
+    add(load_insn(node), val, addr)
+    imm := nreg
+    nreg++
+    add(IR_IMM, imm, num)
+    add(IR_ADD, val, imm)
+    add(store_insn(node), addr, val)
+    kill(addr)
+    add(IR_SUB, val, imm)
+    kill(imm)
+    return val
+}
+
 func gen_expr(node *Node) int {
     switch node.Op {
     case ND_NUM:
@@ -260,6 +291,14 @@ func gen_expr(node *Node) int {
         r := gen_expr(node.Expr)
         add(IR_NEG, r, -1)
         return r
+    case ND_PRE_INC:
+        return gen_pre_inc(node, 1)
+    case ND_PRE_DEC:
+        return gen_pre_inc(node, -1)
+    case ND_POST_INC:
+        return gen_post_inc(node, 1)
+    case ND_POST_DEC:
+        return gen_post_inc(node, -1)
     case ',':
         kill(gen_expr(node.Lhs))
         return gen_expr(node.Rhs)

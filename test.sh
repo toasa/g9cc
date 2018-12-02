@@ -200,4 +200,9 @@ try 0 'int main() { return 9 % 3; }'
 
 try 5 'int main() { return -3 + 8; }'
 
+try 3 'int main() { int i = 3; return i++; }'
+try 4 'int main() { int i = 3; return ++i; }'
+try 3 'int main() { int i = 3; return i--; }'
+try 2 'int main() { int i = 3; return --i; }'
+
 echo OK

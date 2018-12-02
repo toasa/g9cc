@@ -8,7 +8,7 @@ import (
     . "g9cc/common"
     . "g9cc/util"
     "fmt"
-    // "github.com/k0kubun/pp"
+    "github.com/k0kubun/pp"
 )
 
 var int_ty Type = Type{Ty: INT, Size: 4, Align: 4}
@@ -221,7 +221,7 @@ func walk(node *Node, env *Env, decay bool) *Node {
         node.Rhs = walk(node.Rhs, env, true)
         node.Ty = node.Rhs.Ty
         return node
-    case ND_NEG, '!':
+    case ND_PRE_INC, ND_PRE_DEC, ND_POST_INC, ND_POST_DEC, ND_NEG, '!':
         node.Expr = walk(node.Expr, env, true)
         node.Ty = node.Expr.Ty
         return node
