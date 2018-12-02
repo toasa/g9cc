@@ -156,6 +156,9 @@ func ident() string {
     return t.Name
 }
 
+// 演算子優先順位というものがあり、
+// primaty()が最も高く、expr()が最も低い
+
 func primary() *Node {
     t := tokens.Data[pos].(*Token)
     pos++
@@ -356,15 +359,39 @@ func equality() *Node {
     return err
 }
 
+func bit_xor() *Node {
+    lhs := equality()
+    for {
+        t := tokens.Data[pos].(*Token)
+        if t.Ty != '^' {
+            return lhs
+        }
+        pos++
+        lhs = new_binop('^', lhs, equality())
+    }
+}
+
+func bit_or() *Node {
+    lhs := bit_xor()
+    for {
+        t := tokens.Data[pos].(*Token)
+        if t.Ty != '|' {
+            return lhs
+        }
+        pos++
+        lhs = new_binop('|', lhs, bit_xor())
+    }
+}
+
 func logand() *Node {
-    var lhs *Node = equality()
+    var lhs *Node = bit_or()
     for true {
         t := tokens.Data[pos].(*Token)
         if t.Ty != TK_LOGAND {
             return lhs
         }
         pos++
-        lhs = new_binop(ND_LOGAND, lhs, equality())
+        lhs = new_binop(ND_LOGAND, lhs, bit_or())
     }
 
     err := new(Node)

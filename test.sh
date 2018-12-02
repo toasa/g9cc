@@ -176,4 +176,9 @@ try 3 'int main() { return 1==1 ? 3 : 5; }'
 
 try 3 'int main() { return 1, 2, 3; }'
 
+try 11 'int main() { return 9 | 2; }'
+try 11 'int main() { return 9 | 3; }'
+
+try 5 'int main() { return 6 ^ 3; }'
+
 echo OK
