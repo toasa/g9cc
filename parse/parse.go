@@ -359,15 +359,27 @@ func equality() *Node {
     return err
 }
 
-func bit_xor() *Node {
+func bit_and() *Node {
     lhs := equality()
+    for {
+        t := tokens.Data[pos].(*Token)
+        if t.Ty != '&' {
+            return lhs
+        }
+        pos++
+        lhs = new_binop('&', lhs, equality())
+    }
+}
+
+func bit_xor() *Node {
+    lhs := bit_and()
     for {
         t := tokens.Data[pos].(*Token)
         if t.Ty != '^' {
             return lhs
         }
         pos++
-        lhs = new_binop('^', lhs, equality())
+        lhs = new_binop('^', lhs, bit_and())
     }
 }
 

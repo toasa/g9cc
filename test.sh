@@ -181,4 +181,7 @@ try 11 'int main() { return 9 | 3; }'
 
 try 5 'int main() { return 6 ^ 3; }'
 
+try 2 'int main() { return 6 & 3; }'
+try 0 'int main() { return 6 & 0; }'
+
 echo OK

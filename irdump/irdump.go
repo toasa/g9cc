@@ -24,6 +24,7 @@ var Irinfo_arr []IRInfo = []IRInfo{
     {"EQ", IR_TY_REG_REG},
     {"NE", IR_TY_REG_REG},
     {"LT", IR_TY_REG_REG},
+    {"AND", IR_TY_REG_REG},
     {"OR", IR_TY_REG_REG},
     {"XOR", IR_TY_REG_REG},
     {"JMP", IR_TY_JMP},

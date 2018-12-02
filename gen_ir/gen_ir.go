@@ -242,6 +242,8 @@ func gen_expr(node *Node) int {
         return gen_binop(IR_DIV, node)
     case '<':
         return gen_binop(IR_LT, node)
+    case '&':
+        return gen_binop(IR_AND, node)
     case '|':
         return gen_binop(IR_OR, node)
     case '^':
