@@ -8,7 +8,7 @@ import (
     . "g9cc/common"
     . "g9cc/util"
     "fmt"
-    "github.com/k0kubun/pp"
+    // "github.com/k0kubun/pp"
 )
 
 var int_ty Type = Type{Ty: INT, Size: 4, Align: 4}
@@ -195,6 +195,10 @@ func walk(node *Node, env *Env, decay bool) *Node {
         }
 
         ty := node.Expr.Ty
+        if ty.Members == nil {
+            Error("incomplete type")
+        }
+
         for i := 0; i < ty.Members.Len; i++ {
             m := ty.Members.Data[i].(*Node)
             if m.Name != node.Name {

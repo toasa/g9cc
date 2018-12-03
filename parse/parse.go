@@ -27,6 +27,26 @@ func new_env(next *Env) *Env {
     return env
 }
 
+func find_typedef(name string) *Type {
+    for e := env; e != nil; e = e.next {
+        _, ok := e.typedefs[name]
+        if ok {
+            return e.typedefs[name].(*Type)
+        }
+    }
+    return nil
+}
+
+func find_tag(name string) *Type {
+    for e := env; e != nil; e = e.next {
+        _, ok := e.tags[name]
+        if ok {
+            return e.tags[name].(*Type)
+        }
+    }
+    return nil
+}
+
 func expect(ty int) {
     t, _ := tokens.Data[pos].(*Token)
     if t.Ty != ty {
@@ -68,11 +88,30 @@ func consume(ty int) bool {
 func is_typename() bool {
     t := tokens.Data[pos].(*Token)
     if t.Ty == TK_IDENT {
-        _, ok := env.typedefs[t.Name]
-        return ok
+        return find_typedef(t.Name) != nil
     }
     return t.Ty == TK_INT || t.Ty == TK_CHAR ||
     t.Ty == TK_STRUCT || t.Ty == TK_VOID
+}
+
+func add_members(ty *Type, members *Vector) {
+    off := 0
+    for i := 0; i < members.Len; i++ {
+        node := members.Data[i].(*Node)
+        Assert(node.Op == ND_VARDEF, "node.Op is not ND_VARDEF")
+
+        t := node.Ty
+        off = Roundup(off, t.Align)
+        t.Offset = off
+        off += t.Size
+
+        if ty.Align < node.Ty.Align {
+            ty.Align = node.Ty.Align
+        }
+    }
+
+    ty.Members = members
+    ty.Size = Roundup(off, ty.Align)
 }
 
 func read_type() *Type {
@@ -80,7 +119,7 @@ func read_type() *Type {
     pos++
 
     if t.Ty == TK_IDENT {
-        ty := env.typedefs[t.Name].(*Type)
+        ty := find_typedef(t.Name)
         if ty == nil {
             pos--
         }
@@ -116,16 +155,23 @@ func read_type() *Type {
             Error("bad struct definition")
         }
 
-        if tag != "" && members != nil {
-            env.tags[tag] = members
-        } else if ( tag != "" && members == nil) {
-            members = env.tags[tag].(*Vector)
-            if members == nil {
-                Error(fmt.Sprintf("incomplete type: %s", tag))
-            }
+        var ty *Type = nil
+        if tag != "" && members == nil {
+            ty = find_tag(tag)
         }
 
-        return Struct_of(members)
+        if ty == nil {
+            ty = new(Type)
+            ty.Ty = STRUCT
+        }
+
+        if members != nil {
+            add_members(ty, members)
+            if tag != "" {
+                env.tags[tag] = ty
+            }
+        }
+        return ty
     }
 
     pos--
@@ -615,6 +661,7 @@ func compound_stmt() *Node {
 }
 
 func toplevel() *Node {
+    is_typedef := consume(TK_TYPEDEF)
     is_extern := consume(TK_EXTERN)
     ty := type_()
     if ty == nil {
@@ -641,24 +688,32 @@ func toplevel() *Node {
         }
 
         expect('{')
+        if is_typedef {
+            Error(fmt.Sprintf("typedef %s has function definition", name))
+        }
         node.Body = compound_stmt()
         return node
+    }
+
+    ty = read_array(ty)
+    expect(';')
+
+    if is_typedef {
+        env.typedefs[name] = ty
+        return nil
     }
 
     // Global variable
     node := new(Node)
     node.Op = ND_VARDEF
-    node.Ty = read_array(ty)
+    node.Ty = ty
     node.Name = name
 
-    if is_extern {
-        node.Is_extern = true
-    } else {
+    node.Is_extern = is_extern
+    if !is_extern {
         // node.Data = ""
         node.Len = node.Ty.Size
     }
-
-    expect(';')
     return node
 }
 
@@ -669,8 +724,19 @@ func Parse(tokens_ *Vector) *Vector {
     env = new_env(env)
     v := New_vec()
 
-    for t := tokens.Data[pos].(*Token); t.Ty != TK_EOF; t = tokens.Data[pos].(*Token) {
-        Vec_push(v, toplevel())
+    // for t := tokens.Data[pos].(*Token); t.Ty != TK_EOF; t = tokens.Data[pos].(*Token) {
+    //     Vec_push(v, toplevel())
+    // }
+    // return v
+
+    for {
+        t := tokens.Data[pos].(*Token)
+        if t.Ty == TK_EOF {
+            return v
+        }
+        node := toplevel()
+        if node != nil {
+            Vec_push(v, node)
+        }
     }
-    return v
 }

@@ -37,6 +37,9 @@ try2() {
     fi
 }
 
+try 4 'int main() { typedef int myint; myint foo = 3; return sizeof(foo); }'
+try 1 'int main() { typedef struct foo_ foo; return 1; }'
+
 try 3 'int main() {
         // single-line comment
         return 3; }'

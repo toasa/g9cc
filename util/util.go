@@ -187,30 +187,6 @@ func Ary_of(base *Type, len_ int) *Type{
     return ty
 }
 
-func Struct_of(members *Vector) *Type {
-    ty := new(Type)
-    ty.Ty = STRUCT
-    ty.Members = members
-
-    var off int = 0
-    for i := 0; i < members.Len; i++ {
-        node := members.Data[i].(*Node)
-        Assert(node.Op == ND_VARDEF, "node.Op is not ND_VARDEF")
-
-        t := node.Ty
-        off = Roundup(off, t.Align)
-        t.Offset = off
-        off += t.Size
-
-        if ty.Align < node.Ty.Align {
-            ty.Align = node.Ty.Align
-        }
-    }
-
-    ty.Size = Roundup(off, ty.Align)
-    return ty
-}
-
 func Roundup(x, align int) int {
     // ^: complement operator
     return (x + align - 1) & (^(align - 1))
