@@ -11,8 +11,11 @@ import (
 var Irinfo_arr []IRInfo = []IRInfo{
     // name, ty
     {"ADD", IR_TY_REG_REG},
+    {"ADD", IR_TY_REG_IMM},
     {"SUB", IR_TY_REG_REG},
+    {"SUB", IR_TY_REG_IMM},
     {"MUL", IR_TY_REG_REG},
+    {"MUL", IR_TY_REG_IMM},
     {"DIV", IR_TY_REG_REG},
     {"IMM", IR_TY_REG_IMM},
     {"BPREL", IR_TY_REG_IMM},

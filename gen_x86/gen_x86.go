@@ -218,14 +218,22 @@ func gen(fn *Function) {
             fmt.Printf("    mov [rbp-%d], %s\n", ir.Lhs, argreg64[ir.Rhs])
         case IR_ADD:
             fmt.Printf("    add %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+        case IR_ADD_IMM:
+            fmt.Printf("    add %s, %d\n", Regs[ir.Lhs], ir.Rhs)
         case IR_SUB:
             fmt.Printf("    sub %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+        case IR_SUB_IMM:
+            fmt.Printf("    sub %s, %d\n", Regs[ir.Lhs], ir.Rhs)
         case IR_MUL:
             fmt.Printf("    mov rax, %s\n", Regs[ir.Rhs])
             // mul reg: 予めrax(アキュムレータ)に格納された値と
             //          regに格納された値の掛け算を行い,結果をraxに格納する
             fmt.Printf("    mul %s\n", Regs[ir.Lhs])
             // 掛け算の結果を汎用レジスタに格納する
+            fmt.Printf("    mov %s, rax\n", Regs[ir.Lhs])
+        case IR_MUL_IMM:
+            fmt.Printf("    mov rax, %d\n", ir.Rhs)
+            fmt.Printf("    mul %s\n", Regs[ir.Lhs])
             fmt.Printf("    mov %s, rax\n", Regs[ir.Lhs])
         case IR_DIV:
             // raxに左辺値を代入

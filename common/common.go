@@ -202,8 +202,11 @@ type IRInfo struct {
 
 const (
     IR_ADD = iota
+    IR_ADD_IMM
     IR_SUB
+    IR_SUB_IMM
     IR_MUL
+    IR_MUL_IMM
     IR_DIV
     IR_IMM
     IR_BPREL
