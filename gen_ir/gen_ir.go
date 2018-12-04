@@ -16,6 +16,7 @@ var nreg int = 1
 var nlabel int = 1
 var return_label int
 var return_reg int
+var break_label int
 
 func add(op int, lhs int, rhs int) *IR {
     var ir *IR = new(IR)
@@ -370,6 +371,9 @@ func gen_stmt(node *Node) {
         nlabel++
         y := nlabel
         nlabel++
+        orig := break_label
+        break_label = nlabel
+        nlabel++
 
         gen_stmt(node.Init)
         label(x)
@@ -380,16 +384,28 @@ func gen_stmt(node *Node) {
         gen_stmt(node.Inc)
         add(IR_JMP, x, -1)
         label(y)
+        label(break_label)
+        break_label = orig
         return
     case ND_DO_WHILE:
         x := nlabel
+        nlabel++
+        orig := break_label
+        break_label = nlabel
         nlabel++
         label(x)
         gen_stmt(node.Body)
         r := gen_expr(node.Cond)
         add(IR_IF, r, x)
         kill(r)
+        label(break_label)
+        break_label = orig
         return
+    case ND_BREAK:
+        if break_label == 0 {
+            Error("stray 'break' statement")
+        }
+        add(IR_JMP, break_label, -1)
     case ND_RETURN:
         r := gen_expr(node.Expr)
 
@@ -415,7 +431,7 @@ func gen_stmt(node *Node) {
         return
     default:
         Error(fmt.Sprintf("unknown node: %d", node.Op))
-    }    
+    }
 }
 
 func Gen_ir(nodes *Vector) *Vector{

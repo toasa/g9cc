@@ -21,8 +21,8 @@ type Env struct {
     next *Env
 }
 
-var env *Env
 var globals *Vector
+var env *Env
 var str_label int
 var stacksize int
 
@@ -99,7 +99,7 @@ func new_int(val int) *Node {
 // ASTを渡り歩く
 func walk(node *Node, decay bool) *Node {
     switch node.Op {
-    case ND_NUM, ND_NULL:
+    case ND_NUM, ND_NULL, ND_BREAK:
         return node
     case ND_STR:
         // 文字列はグローバル変数として扱う

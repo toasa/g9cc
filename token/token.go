@@ -23,7 +23,8 @@ var symbols = []struct {
     name string
     ty int
 }{
-    {"_Alignof", TK_ALIGNOF}, {"char", TK_CHAR},
+    {"_Alignof", TK_ALIGNOF}, {"break", TK_BREAK},
+    {"char", TK_CHAR},
     {"do", TK_DO},{"else", TK_ELSE},
     {"extern", TK_EXTERN}, {"for", TK_FOR},
     {"if", TK_IF}, {"int", TK_INT},

@@ -18,6 +18,7 @@ var tokens *Vector
 var pos int = 0
 var env *Env
 var null_stmt Node = Node{Op: ND_NULL}
+var break_stmt Node = Node{Op: ND_BREAK}
 
 func new_env(next *Env) *Env {
     env := new(Env)
@@ -611,6 +612,8 @@ func stmt() *Node {
         expect(')')
         expect(';')
         return node
+    case TK_BREAK:
+        return &break_stmt
     case TK_RETURN:
         node.Op = ND_RETURN
         node.Expr = expr()
