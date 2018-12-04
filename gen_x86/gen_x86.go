@@ -125,16 +125,18 @@ func gen(fn *Function) {
 
     for i := 0; i < fn.Ir.Len; i++ {
         ir := fn.Ir.Data[i].(*IR)
+        lhs := ir.Lhs
+        rhs := ir.Rhs
 
         switch ir.Op {
         case IR_IMM:
-            fmt.Printf("    mov %s, %d\n", Regs[ir.Lhs], ir.Rhs)
+            fmt.Printf("    mov %s, %d\n", Regs[lhs], rhs)
         case IR_BPREL:
-            fmt.Printf("    lea %s, [rbp - %d]\n", Regs[ir.Lhs], ir.Rhs)
+            fmt.Printf("    lea %s, [rbp - %d]\n", Regs[lhs], rhs)
         case IR_MOV:
-            fmt.Printf("    mov %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+            fmt.Printf("    mov %s, %s\n", Regs[lhs], Regs[rhs])
         case IR_RETURN: // lhsに格納された値をアキュムレータに渡し、戻り値とする
-            fmt.Printf("    mov rax, %s\n", Regs[ir.Lhs])
+            fmt.Printf("    mov rax, %s\n", Regs[lhs])
             fmt.Printf("    jmp %s\n", ret)
         case IR_CALL:
             for i := 0; i < ir.Nargs; i++ {
@@ -150,16 +152,16 @@ func gen(fn *Function) {
             fmt.Printf("    pop r11\n")
             fmt.Printf("    pop r10\n")
 
-            fmt.Printf("    mov %s, rax\n", Regs[ir.Lhs])
+            fmt.Printf("    mov %s, rax\n", Regs[lhs])
         case IR_LABEL:
-            fmt.Printf(".L%d:\n", ir.Lhs)
+            fmt.Printf(".L%d:\n", lhs)
         case IR_LABEL_ADDR:
             // load effective address
             // 第２オペランドの実行アドレスを計算し、第１オペランドに格納する
             // 第２オペランドが格納されたアドレスはripによっても変化する？
-            fmt.Printf("    lea %s, [rip + %s]\n", Regs[ir.Lhs], ir.Name)
+            fmt.Printf("    lea %s, [rip + %s]\n", Regs[lhs], ir.Name)
         case IR_NEG:
-            fmt.Printf("    neg %s\n", Regs[ir.Lhs])
+            fmt.Printf("    neg %s\n", Regs[lhs])
         case IR_EQ:
             // ZFフラグの値をオペランドへ格納
             emit_cmp(ir, "sete")
@@ -172,84 +174,84 @@ func gen(fn *Function) {
         case IR_LE:
             emit_cmp(ir, "setle")
         case IR_AND:
-            fmt.Printf("    and %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+            fmt.Printf("    and %s, %s\n", Regs[lhs], Regs[rhs])
         case IR_OR:
-            fmt.Printf("    or %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+            fmt.Printf("    or %s, %s\n", Regs[lhs], Regs[rhs])
         case IR_XOR:
-            fmt.Printf("    xor %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+            fmt.Printf("    xor %s, %s\n", Regs[lhs], Regs[rhs])
         case IR_SHL:
-            fmt.Printf("    mov cl, %s\n", Regs8[ir.Rhs])
+            fmt.Printf("    mov cl, %s\n", Regs8[rhs])
             // clレジスタの値だけ%sを左シフト
-            fmt.Printf("    shl %s, cl\n", Regs[ir.Lhs])
+            fmt.Printf("    shl %s, cl\n", Regs[lhs])
         case IR_SHR:
-            fmt.Printf("    mov cl, %s\n", Regs8[ir.Rhs])
-            fmt.Printf("    shr %s, cl\n", Regs[ir.Lhs])
+            fmt.Printf("    mov cl, %s\n", Regs8[rhs])
+            fmt.Printf("    shr %s, cl\n", Regs[lhs])
         case IR_JMP:
-            fmt.Printf("    jmp .L%d\n", ir.Lhs)
+            fmt.Printf("    jmp .L%d\n", lhs)
         case IR_IF:
             // 左右のオペランドを引き算し、フラグレジスタに結果を格納
-            fmt.Printf("    cmp %s, 0\n", Regs[ir.Lhs])
+            fmt.Printf("    cmp %s, 0\n", Regs[lhs])
             // jump if not equal
             // ZF(ゼロ・フラグ)が0のとき(cmpを行い左右のオペランドが等しくないとき),
             // オペランドのラベルへジャンプ
-            fmt.Printf("    jne .L%d\n", ir.Rhs)
+            fmt.Printf("    jne .L%d\n", rhs)
         case IR_UNLESS:
             // 今の所, lhsの(レジスタの)値が0ならラベルに飛ぶ
-            fmt.Printf("    cmp %s, 0\n", Regs[ir.Lhs])
-            fmt.Printf("    je .L%d\n", ir.Rhs)
+            fmt.Printf("    cmp %s, 0\n", Regs[lhs])
+            fmt.Printf("    je .L%d\n", rhs)
         case IR_LOAD8:
-            fmt.Printf("    mov %s, [%s]\n", Regs8[ir.Lhs], Regs[ir.Rhs])
-            fmt.Printf("    movzx %s, %s\n", Regs[ir.Lhs], Regs8[ir.Rhs])
+            fmt.Printf("    mov %s, [%s]\n", Regs8[lhs], Regs[rhs])
+            fmt.Printf("    movzx %s, %s\n", Regs[lhs], Regs8[rhs])
         case IR_LOAD32:
-            fmt.Printf("    mov %s, [%s]\n", Regs32[ir.Lhs], Regs[ir.Rhs])
+            fmt.Printf("    mov %s, [%s]\n", Regs32[lhs], Regs[rhs])
         case IR_LOAD64:
-            fmt.Printf("    mov %s, [%s]\n", Regs[ir.Lhs], Regs[ir.Rhs])
+            fmt.Printf("    mov %s, [%s]\n", Regs[lhs], Regs[rhs])
         case IR_STORE8:
-            fmt.Printf("    mov [%s], %s\n", Regs[ir.Lhs], Regs8[ir.Rhs])
+            fmt.Printf("    mov [%s], %s\n", Regs[lhs], Regs8[rhs])
         case IR_STORE32:
-            fmt.Printf("    mov [%s], %s\n", Regs[ir.Lhs], Regs32[ir.Rhs])
+            fmt.Printf("    mov [%s], %s\n", Regs[lhs], Regs32[rhs])
         case IR_STORE64:
-            fmt.Printf("    mov [%s], %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+            fmt.Printf("    mov [%s], %s\n", Regs[lhs], Regs[rhs])
         case IR_STORE8_ARG:
-            fmt.Printf("    mov [rbp-%d], %s\n", ir.Lhs, argreg8[ir.Rhs])
+            fmt.Printf("    mov [rbp-%d], %s\n", lhs, argreg8[rhs])
         case IR_STORE32_ARG:
-            fmt.Printf("    mov [rbp-%d], %s\n", ir.Lhs, argreg32[ir.Rhs])
+            fmt.Printf("    mov [rbp-%d], %s\n", lhs, argreg32[rhs])
         case IR_STORE64_ARG:
-            fmt.Printf("    mov [rbp-%d], %s\n", ir.Lhs, argreg64[ir.Rhs])
+            fmt.Printf("    mov [rbp-%d], %s\n", lhs, argreg64[rhs])
         case IR_ADD:
-            fmt.Printf("    add %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+            fmt.Printf("    add %s, %s\n", Regs[lhs], Regs[rhs])
         case IR_ADD_IMM:
-            fmt.Printf("    add %s, %d\n", Regs[ir.Lhs], ir.Rhs)
+            fmt.Printf("    add %s, %d\n", Regs[lhs], rhs)
         case IR_SUB:
-            fmt.Printf("    sub %s, %s\n", Regs[ir.Lhs], Regs[ir.Rhs])
+            fmt.Printf("    sub %s, %s\n", Regs[lhs], Regs[rhs])
         case IR_SUB_IMM:
-            fmt.Printf("    sub %s, %d\n", Regs[ir.Lhs], ir.Rhs)
+            fmt.Printf("    sub %s, %d\n", Regs[lhs], rhs)
         case IR_MUL:
-            fmt.Printf("    mov rax, %s\n", Regs[ir.Rhs])
+            fmt.Printf("    mov rax, %s\n", Regs[rhs])
             // mul reg: 予めrax(アキュムレータ)に格納された値と
             //          regに格納された値の掛け算を行い,結果をraxに格納する
-            fmt.Printf("    mul %s\n", Regs[ir.Lhs])
+            fmt.Printf("    mul %s\n", Regs[lhs])
             // 掛け算の結果を汎用レジスタに格納する
-            fmt.Printf("    mov %s, rax\n", Regs[ir.Lhs])
+            fmt.Printf("    mov %s, rax\n", Regs[lhs])
         case IR_MUL_IMM:
-            fmt.Printf("    mov rax, %d\n", ir.Rhs)
-            fmt.Printf("    mul %s\n", Regs[ir.Lhs])
-            fmt.Printf("    mov %s, rax\n", Regs[ir.Lhs])
+            fmt.Printf("    mov rax, %d\n", rhs)
+            fmt.Printf("    mul %s\n", Regs[lhs])
+            fmt.Printf("    mov %s, rax\n", Regs[lhs])
         case IR_DIV:
             // raxに左辺値を代入
-            fmt.Printf("    mov rax, %s\n", Regs[ir.Lhs])
+            fmt.Printf("    mov rax, %s\n", Regs[lhs])
             // convert quadword to octaword: 符号拡張(アキュムレータを拡張する)
             // wordは4byteのこと? => ocは32byte?
             fmt.Printf("    cqo\n")
-            fmt.Printf("    div %s\n", Regs[ir.Rhs])
+            fmt.Printf("    div %s\n", Regs[rhs])
             // divの商はraxに格納される
-            fmt.Printf("    mov %s, rax\n", Regs[ir.Lhs])
+            fmt.Printf("    mov %s, rax\n", Regs[lhs])
         case IR_MOD:
-            fmt.Printf("    mov rax, %s\n", Regs[ir.Lhs])
+            fmt.Printf("    mov rax, %s\n", Regs[lhs])
             fmt.Printf("    cqo\n")
-            fmt.Printf("    div %s\n", Regs[ir.Rhs])
+            fmt.Printf("    div %s\n", Regs[rhs])
             // divのあまりはraxに格納される
-            fmt.Printf("    mov %s, rdx\n", Regs[ir.Lhs])
+            fmt.Printf("    mov %s, rdx\n", Regs[lhs])
         case IR_NOP:
 
         default:
