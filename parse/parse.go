@@ -584,13 +584,20 @@ func stmt() *Node {
         expect('(')
         if is_typename() {
             node.Init = decl()
+        } else if consume(';') {
+            // for (; ...)の場合
+            node.Init = &null_stmt
         } else {
             node.Init = expr_stmt()
         }
-        node.Cond = expr()
-        expect(';')
-        node.Inc = new_expr(ND_EXPR_STMT, expr())
-        expect(')')
+        if !consume(';') {
+            node.Cond = expr()
+            expect(';')
+        }
+        if !consume(')') {
+            node.Inc = new_expr(ND_EXPR_STMT, expr())
+            expect(')')
+        }
         node.Body = stmt()
         return node
     case TK_WHILE:

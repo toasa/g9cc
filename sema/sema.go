@@ -162,8 +162,12 @@ func walk(node *Node, decay bool) *Node {
     case ND_FOR:
         env = new_env(env)
         node.Init = walk(node.Init, true)
-        node.Cond = walk(node.Cond, true)
-        node.Inc = walk(node.Inc, true)
+        if node.Cond != nil {
+            node.Cond = walk(node.Cond, true)
+        }
+        if node.Inc != nil {
+            node.Inc = walk(node.Inc, true)
+        }
         node.Body = walk(node.Body, true)
         env = env.next
         return node
