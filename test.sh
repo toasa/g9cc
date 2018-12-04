@@ -37,9 +37,6 @@ try2() {
     fi
 }
 
-try 1 'int main() { int ary[2]; ary[0]=1; ary[1]=2; int *p=ary; return *p++; }'
-try 2 'int main() { int ary[2]; ary[0]=1; ary[1]=2; int *p=ary; return *++p; }'
-
 try 4 'int main() { typedef int myint; myint foo = 3; return sizeof(foo); }'
 try 1 'int main() { typedef struct foo_ foo; return 1; }'
 

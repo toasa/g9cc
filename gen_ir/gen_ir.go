@@ -35,6 +35,10 @@ func label(x int) {
     add(IR_LABEL, x, -1)
 }
 
+func jmp(x int) {
+    add(IR_JMP, x, -1)
+}
+
 func choose_insn(node *Node, op8, op32, op64 int) int {
 
     if node.Ty.Size == 1 {
@@ -161,7 +165,7 @@ func gen_expr(node *Node) int {
         // r1値がfalse(0)でない場合, r1にtrue(1)を代入し,
         // y(最終的なラベル)に飛ぶ
         add(IR_IMM, r1, 1)
-        add(IR_JMP, y, -1)
+        jmp(y)
 
         // 中継先ラベルxの用意
         label(x)
@@ -297,7 +301,7 @@ func gen_expr(node *Node) int {
         r2 := gen_expr(node.Then)
         add(IR_MOV, r, r2)
         kill(r2)
-        add(IR_JMP, y, -1)
+        jmp(y)
 
         label(x)
         r3 := gen_expr(node.Els)
@@ -353,7 +357,7 @@ func gen_stmt(node *Node) {
             kill(r)
 
             gen_stmt(node.Then)
-            add(IR_JMP, y, -1)
+            jmp(y)
             label(x)
 
             gen_stmt(node.Els)
@@ -393,7 +397,7 @@ func gen_stmt(node *Node) {
         if node.Inc != nil {
             gen_stmt(node.Inc)
         }
-        add(IR_JMP, x, -1)
+        jmp(x)
         label(y)
         label(break_label)
         break_label = orig
@@ -416,7 +420,7 @@ func gen_stmt(node *Node) {
         if break_label == 0 {
             Error("stray 'break' statement")
         }
-        add(IR_JMP, break_label, -1)
+        jmp(break_label)
     case ND_RETURN:
         r := gen_expr(node.Expr)
 
@@ -424,7 +428,7 @@ func gen_stmt(node *Node) {
         if return_label != 0 {
             add(IR_MOV, return_reg, r)
             kill(r)
-            add(IR_JMP, return_label, -1)
+            jmp(return_label)
             return
         }
 
