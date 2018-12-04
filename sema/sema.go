@@ -160,10 +160,12 @@ func walk(node *Node, decay bool) *Node {
         }
         return node
     case ND_FOR:
+        env = new_env(env)
         node.Init = walk(node.Init, true)
         node.Cond = walk(node.Cond, true)
         node.Inc = walk(node.Inc, true)
         node.Body = walk(node.Body, true)
+        env = env.next
         return node
     case ND_DO_WHILE:
         node.Cond = walk(node.Cond, true)
