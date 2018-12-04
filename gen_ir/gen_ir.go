@@ -314,12 +314,10 @@ func gen_expr(node *Node) int {
 }
 
 func gen_stmt(node *Node) {
-    if node.Op == ND_NULL {
+    switch node.Op {
+    case ND_NULL:
         return
-    }
-
-    if node.Op == ND_VARDEF {
-
+    case ND_VARDEF:
         if node.Init == nil {
             return
         }
@@ -334,10 +332,7 @@ func gen_stmt(node *Node) {
         kill(lhs)
         kill(rhs)
         return
-    }
-
-    if node.Op == ND_IF {
-
+    case ND_IF:
         if Node2bool(node.Els) {
             // else文がある場合
             x := nlabel
@@ -370,9 +365,7 @@ func gen_stmt(node *Node) {
 
         label(x)
         return
-    }
-
-    if node.Op == ND_FOR {
+    case ND_FOR:
         x := nlabel
         nlabel++
         y := nlabel
@@ -388,9 +381,7 @@ func gen_stmt(node *Node) {
         add(IR_JMP, x, -1)
         label(y)
         return
-    }
-
-    if node.Op == ND_DO_WHILE {
+    case ND_DO_WHILE:
         x := nlabel
         nlabel++
         label(x)
@@ -399,9 +390,7 @@ func gen_stmt(node *Node) {
         add(IR_IF, r, x)
         kill(r)
         return
-    }
-
-    if node.Op == ND_RETURN {
+    case ND_RETURN:
         r := gen_expr(node.Expr)
 
         // Statement expression (GNU extension)
@@ -415,22 +404,18 @@ func gen_stmt(node *Node) {
         add(IR_RETURN, r, -1)
         kill(r)
         return
-    }
-
-    if node.Op == ND_EXPR_STMT {
+    case ND_EXPR_STMT:
         kill(gen_expr(node.Expr))
         return
-    }
-
-    if node.Op == ND_COMP_STMT {
+    case ND_COMP_STMT:
         for i := 0; i < node.Stmts.Len; i++ {
             n, _ := node.Stmts.Data[i].(*Node)
             gen_stmt(n)
         }
         return
-    }
-
-    Error(fmt.Sprintf("unknown node: %d", node.Op))
+    default:
+        Error(fmt.Sprintf("unknown node: %d", node.Op))
+    }    
 }
 
 func Gen_ir(nodes *Vector) *Vector{
