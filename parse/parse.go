@@ -556,18 +556,17 @@ func expr_stmt() *Node {
 func stmt() *Node {
     node := new(Node)
     t := tokens.Data[pos].(*Token)
+    pos++
 
     switch t.Ty {
     case TK_TYPEDEF:
-        pos++
         node := decl()
         Assert(node.Name != "", "")
         env.typedefs[node.Name] = node.Ty
         return &null_stmt
-    case TK_INT, TK_CHAR, TK_STRUCT:
-        return decl()
+    // case TK_INT, TK_CHAR, TK_STRUCT:
+    //     return decl()
     case TK_IF:
-        pos++
         node.Op = ND_IF
         expect('(')
         node.Cond = expr()
@@ -580,7 +579,6 @@ func stmt() *Node {
         }
         return node
     case TK_FOR:
-        pos++
         node.Op = ND_FOR
         expect('(')
         if is_typename() {
@@ -595,7 +593,6 @@ func stmt() *Node {
         node.Body = stmt()
         return node
     case TK_WHILE:
-        pos++
         // while文はfor文の初期化とインクリメントがないものとして扱っている
         node.Op = ND_FOR
         node.Init = &null_stmt
@@ -606,7 +603,6 @@ func stmt() *Node {
         node.Body = stmt()
         return node
     case TK_DO:
-        pos++
         node.Op = ND_DO_WHILE
         node.Body = stmt()
         expect(TK_WHILE)
@@ -616,13 +612,11 @@ func stmt() *Node {
         expect(';')
         return node
     case TK_RETURN:
-        pos++
         node.Op = ND_RETURN
         node.Expr = expr()
         expect(';')
         return node
     case '{':
-        pos++
         node.Op = ND_COMP_STMT
         node.Stmts = New_vec()
         for !consume('}') {
@@ -630,9 +624,9 @@ func stmt() *Node {
         }
         return node
     case ';':
-        pos++
         return &null_stmt
     default:
+        pos--;
         if is_typename() {
             return decl()
         }
