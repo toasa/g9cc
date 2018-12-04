@@ -83,10 +83,9 @@ func maybe_decay(base *Node, decay bool) *Node {
 
 func check_lval(node *Node) {
     op := node.Op
-    if op == ND_LVAR || op == ND_GVAR || op == ND_DEREF || op == ND_DOT {
-        return
+    if op != ND_LVAR && op != ND_GVAR && op != ND_DEREF && op != ND_DOT {
+        Error(fmt.Sprintf("not an lvalue: %d (%s)", op, node.Name))
     }
-    Error(fmt.Sprintf("not an lvalue: %d (%s)", op, node.Name))
 }
 
 func new_int(val int) *Node {
@@ -100,7 +99,7 @@ func new_int(val int) *Node {
 // ASTを渡り歩く
 func walk(node *Node, decay bool) *Node {
     switch node.Op {
-    case ND_NUM:
+    case ND_NUM, ND_NULL:
         return node
     case ND_STR:
         // 文字列はグローバル変数として扱う
@@ -276,8 +275,6 @@ func walk(node *Node, decay bool) *Node {
     case ND_STMT_EXPR:
         node.Body = walk(node.Body, true)
         node.Ty = &int_ty
-        return node
-    case ND_NULL:
         return node
     default:
         Assert(false, "unknown node type")
