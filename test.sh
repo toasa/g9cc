@@ -37,11 +37,8 @@ try2() {
     fi
 }
 
-try 60 'int main() { int sum=0; int i; for (i=10; i<15; i=i+1) sum = sum + i; return sum; }'
-try 89 'int main() { int i=1; int j=1; for (int k=0; k<10; k=k+1) {int m=i+j; i=j; j=m; } return i; }'
-try 1 'int main() { int i=1; for (int i=0; i<10; i++); return i; }'
-try 5 'int main() { int i=0; for (0; i < 10; i++) if (i == 5) break; return i; }'
-try 10 'int main() { int i=0; for (;;) { i++; if (i==10) break; } return i; }'
+try 1 'int main() { int ary[2]; ary[0]=1; ary[1]=2; int *p=ary; return *p++; }'
+try 2 'int main() { int ary[2]; ary[0]=1; ary[1]=2; int *p=ary; return *++p; }'
 
 try 4 'int main() { typedef int myint; myint foo = 3; return sizeof(foo); }'
 try 1 'int main() { typedef struct foo_ foo; return 1; }'
@@ -112,6 +109,8 @@ try 5 'int main() { int x; int *p = &x; x = 5; return *p; }'
 
 try 3 'int main() { int ary[2]; ary[0]=1; ary[1]=2; return ary[0] + ary[0+1]; }'
 try 5 'int main() { int x; int *p = &x; x = 5; return p[0]; }'
+try 1 'int main() { int ary[2]; ary[0]=1; ary[1]=2; int *p=ary; return *p++; }'
+try 2 'int main() { int ary[2]; ary[0]=1; ary[1]=2; int *p=ary; return *++p; }'
 
 try 1 'int main() { char x; return sizeof x; }'
 try 4 'int main() { int x; return sizeof(x); }'

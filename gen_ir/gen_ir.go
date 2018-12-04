@@ -95,12 +95,19 @@ func gen_binop(ty int, node *Node) int {
     return lhs
 }
 
+func gen_inc_scale(node *Node) int {
+    if node.Ty.Ty == PTR {
+        return node.Ty.Ptr_to.Size
+    }
+    return 1
+}
+
 func gen_pre_inc(node *Node, num int) int {
     addr := gen_lval(node.Expr)
     val := nreg
     nreg++
     add(load_insn(node), val, addr)
-    add(IR_ADD_IMM, val, num)
+    add(IR_ADD_IMM, val, num * gen_inc_scale(node))
     add(store_insn(node), addr, val)
     kill(addr)
     return val
@@ -108,7 +115,7 @@ func gen_pre_inc(node *Node, num int) int {
 
 func gen_post_inc(node *Node, num int) int {
     val := gen_pre_inc(node, num)
-    add(IR_SUB_IMM, val, num)
+    add(IR_SUB_IMM, val, num * gen_inc_scale(node))
     return val
 }
 
