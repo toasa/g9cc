@@ -233,7 +233,7 @@ func primary() *Node {
 
     if t.Ty == TK_STR {
         // 文字列はchar型の配列として扱う
-        node.Ty = Ary_of(char_ty(), len(t.Str))
+        node.Ty = Ary_of(char_ty(), t.Len)
         node.Op = ND_STR
         node.Data = t.Str
         node.Len = t.Len

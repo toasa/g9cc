@@ -108,6 +108,7 @@ try 1 'int main() { char x; return sizeof x; }'
 try 4 'int main() { int x; return sizeof(x); }'
 try 8 'int main() { int *x; return sizeof(x); }'
 try 16 'int main() { int x[4]; return sizeof(x); }'
+try 4 'int main () { return sizeof("abc"); }'
 
 try 1 'int main() { char x; return _Alignof x; }'
 try 4 'int main() { int x; return _Alignof(x); }'
