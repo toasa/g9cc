@@ -55,8 +55,9 @@ func load(node *Node, dst int, src int) {
     ir.Size = node.Ty.Size
 }
 
-func store_insn(node *Node) int  {
-    return choose_insn(node, IR_STORE8, IR_STORE32, IR_STORE64)
+func store(node *Node, dst, src int) {
+    ir := add(IR_STORE, dst, src)
+    ir.Size = node.Ty.Size
 }
 
 func store_arg_insn(node *Node) int {
@@ -113,7 +114,7 @@ func gen_pre_inc(node *Node, num int) int {
     nreg++
     load(node, val, addr)
     add(IR_ADD_IMM, val, num * gen_inc_scale(node))
-    add(store_insn(node), addr, val)
+    store(node, addr, val)
     kill(addr)
     return val
 }
@@ -231,7 +232,7 @@ func gen_expr(node *Node) int {
         var rhs int = gen_expr(node.Rhs)
         // lhsはメモリへstoreするためのアドレスが格納されたレジスタ(の番号)が入っている
         var lhs int = gen_lval(node.Lhs)
-        add(store_insn(node), lhs, rhs)
+        store(node, lhs, rhs)
         kill(rhs)
         return lhs
     case '+', '-':
@@ -341,7 +342,7 @@ func gen_stmt(node *Node) {
         // ベースレジスタから、変数のオフセット分引く
         add(IR_BPREL, lhs, node.Offset)
         // メモリ上のスタックで、左辺値(lhs)に対し、右辺値(rhs)を代入する
-        add(store_insn(node), lhs, rhs)
+        store(node, lhs, rhs)
         kill(lhs)
         kill(rhs)
         return

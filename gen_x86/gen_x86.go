@@ -210,24 +210,13 @@ func gen(fn *Function) {
             // 今の所, lhsの(レジスタの)値が0ならラベルに飛ぶ
             fmt.Printf("    cmp %s, 0\n", Regs[lhs])
             fmt.Printf("    je .L%d\n", rhs)
-        // case IR_LOAD8:
-        //     fmt.Printf("    mov %s, [%s]\n", Regs8[lhs], Regs[rhs])
-        //     fmt.Printf("    movzx %s, %s\n", Regs[lhs], Regs8[rhs])
-        // case IR_LOAD32:
-        //     fmt.Printf("    mov %s, [%s]\n", Regs32[lhs], Regs[rhs])
-        // case IR_LOAD64:
-        //     fmt.Printf("    mov %s, [%s]\n", Regs[lhs], Regs[rhs])
         case IR_LOAD:
             fmt.Printf("    mov %s, [%s]\n", reg(lhs, ir.Size), Regs[rhs])
             if ir.Size == 1 {
                 fmt.Printf("    movzx %s, %s\n", Regs[lhs], Regs8[lhs])
             }
-        case IR_STORE8:
-            fmt.Printf("    mov [%s], %s\n", Regs[lhs], Regs8[rhs])
-        case IR_STORE32:
-            fmt.Printf("    mov [%s], %s\n", Regs[lhs], Regs32[rhs])
-        case IR_STORE64:
-            fmt.Printf("    mov [%s], %s\n", Regs[lhs], Regs[rhs])
+        case IR_STORE:
+            fmt.Printf("    mov [%s], %s\n", Regs[lhs], reg(rhs, ir.Size))
         case IR_STORE8_ARG:
             fmt.Printf("    mov [rbp-%d], %s\n", lhs, argreg8[rhs])
         case IR_STORE32_ARG:
