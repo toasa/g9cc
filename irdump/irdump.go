@@ -40,9 +40,7 @@ var Irinfo_arr []IRInfo = []IRInfo{
     {"UNLESS", IR_TY_REG_LABEL},
     {"LOAD", IR_TY_MEM},
     {"STORE", IR_TY_MEM},
-    {"STORE8_ARG", IR_TY_IMM_IMM},
-    {"STORE32_ARG", IR_TY_IMM_IMM},
-    {"STORE64_ARG", IR_TY_IMM_IMM},
+    {"STORE_ARG", IR_TY_STORE_ARG},
     {"KILL", IR_TY_REG},
     {"SAVE_ARGS", IR_TY_IMM},
     {"NOP", IR_TY_NOARG},
@@ -67,8 +65,8 @@ func tostr(ir *IR) string {
         return fmt.Sprintf("  %s%d r%d, r%d", info.Name, ir.Size, ir.Lhs, ir.Rhs)
     case IR_TY_REG_IMM:
         return fmt.Sprintf("  %s r%d, %d", info.Name, ir.Lhs, ir.Rhs)
-    case IR_TY_IMM_IMM:
-        return fmt.Sprintf("  %s %d, %d", info.Name, ir.Lhs, ir.Rhs)
+    case IR_TY_STORE_ARG:
+        return fmt.Sprintf("  %s%d %d, %d", info.Name, ir.Size, ir.Lhs, ir.Rhs)
     case IR_TY_REG_LABEL:
         return fmt.Sprintf("  %s r%d, .L%d", info.Name, ir.Lhs, ir.Rhs)
     case IR_TY_CALL:

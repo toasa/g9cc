@@ -114,6 +114,17 @@ func reg(r int, size int) string {
     return Regs[r]
 }
 
+func argreg(r int, size int) string {
+    if size == 1 {
+        return argreg8[r]
+    }
+    if size == 4 {
+        return argreg32[r]
+    }
+    Assert(size == 8, "size is not 8")
+    return argreg64[r]
+}
+
 func gen(fn *Function) {
 
     var ret string = fmt.Sprintf(".Lend%d", label)
@@ -217,12 +228,8 @@ func gen(fn *Function) {
             }
         case IR_STORE:
             fmt.Printf("    mov [%s], %s\n", Regs[lhs], reg(rhs, ir.Size))
-        case IR_STORE8_ARG:
-            fmt.Printf("    mov [rbp-%d], %s\n", lhs, argreg8[rhs])
-        case IR_STORE32_ARG:
-            fmt.Printf("    mov [rbp-%d], %s\n", lhs, argreg32[rhs])
-        case IR_STORE64_ARG:
-            fmt.Printf("    mov [rbp-%d], %s\n", lhs, argreg64[rhs])
+        case IR_STORE_ARG:
+            fmt.Printf("    mov [rbp-%d], %s\n", lhs, argreg(rhs, ir.Size))
         case IR_ADD:
             fmt.Printf("    add %s, %s\n", Regs[lhs], Regs[rhs])
         case IR_ADD_IMM:

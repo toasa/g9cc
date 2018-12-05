@@ -39,16 +39,16 @@ func jmp(x int) {
     add(IR_JMP, x, -1)
 }
 
-func choose_insn(node *Node, op8, op32, op64 int) int {
-
-    if node.Ty.Size == 1 {
-        return op8
-    } else if node.Ty.Size == 4 {
-        return op32
-    }
-    Assert(node.Ty.Size == 8, "unmatched size")
-    return op64
-}
+// func choose_insn(node *Node, op8, op32, op64 int) int {
+//
+//     if node.Ty.Size == 1 {
+//         return op8
+//     } else if node.Ty.Size == 4 {
+//         return op32
+//     }
+//     Assert(node.Ty.Size == 8, "unmatched size")
+//     return op64
+// }
 
 func load(node *Node, dst int, src int) {
     ir := add(IR_LOAD, dst, src)
@@ -60,8 +60,9 @@ func store(node *Node, dst, src int) {
     ir.Size = node.Ty.Size
 }
 
-func store_arg_insn(node *Node) int {
-    return choose_insn(node, IR_STORE8_ARG, IR_STORE32_ARG, IR_STORE64_ARG)
+func store_arg(node *Node, bpoff, argreg int) {
+    ir := add(IR_STORE_ARG, bpoff, argreg)
+    ir.Size = node.Ty.Size
 }
 
 func gen_lval(node *Node) int {
@@ -484,7 +485,7 @@ func Gen_ir(nodes *Vector) *Vector{
 
         for i := 0; i < node.Args.Len; i++ {
             arg := node.Args.Data[i].(*Node)
-            add(store_arg_insn(arg), arg.Offset, i)
+            store_arg(arg, arg.Offset, i)
         }
 
         gen_stmt(node.Body)
