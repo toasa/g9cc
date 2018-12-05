@@ -38,9 +38,7 @@ var Irinfo_arr []IRInfo = []IRInfo{
     {"JMP", IR_TY_JMP},
     {"IF", IR_TY_REG_LABEL},
     {"UNLESS", IR_TY_REG_LABEL},
-    {"LOAD8", IR_TY_REG_REG},
-    {"LOAD32", IR_TY_REG_REG},
-    {"LOAD64", IR_TY_REG_REG},
+    {"LOAD", IR_TY_MEM},
     {"STORE8", IR_TY_REG_REG},
     {"STORE32", IR_TY_REG_REG},
     {"STORE64", IR_TY_REG_REG},
@@ -67,6 +65,8 @@ func tostr(ir *IR) string {
         return fmt.Sprintf("  %s .L%d", info.Name, ir.Lhs)
     case IR_TY_REG_REG:
         return fmt.Sprintf("  %s r%d, r%d", info.Name, ir.Lhs, ir.Rhs)
+    case IR_TY_MEM:
+        return fmt.Sprintf("  %s%d r%d, r%d", info.Name, ir.Size, ir.Lhs, ir.Rhs)
     case IR_TY_REG_IMM:
         return fmt.Sprintf("  %s r%d, %d", info.Name, ir.Lhs, ir.Rhs)
     case IR_TY_IMM_IMM:

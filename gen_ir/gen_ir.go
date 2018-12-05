@@ -50,8 +50,9 @@ func choose_insn(node *Node, op8, op32, op64 int) int {
     return op64
 }
 
-func load_insn(node *Node) int {
-    return choose_insn(node, IR_LOAD8, IR_LOAD32, IR_LOAD64)
+func load(node *Node, dst int, src int) {
+    ir := add(IR_LOAD, dst, src)
+    ir.Size = node.Ty.Size
 }
 
 func store_insn(node *Node) int  {
@@ -110,7 +111,7 @@ func gen_pre_inc(node *Node, num int) int {
     addr := gen_lval(node.Expr)
     val := nreg
     nreg++
-    add(load_insn(node), val, addr)
+    load(node, val, addr)
     add(IR_ADD_IMM, val, num * gen_inc_scale(node))
     add(store_insn(node), addr, val)
     kill(addr)
@@ -182,7 +183,7 @@ func gen_expr(node *Node) int {
         return r1
     case ND_GVAR, ND_LVAR, ND_DOT:
         var r int = gen_lval(node)
-        add(load_insn(node), r, r)
+        load(node, r, r)
         return r
     case ND_CALL:
         var args [6]int
@@ -209,7 +210,7 @@ func gen_expr(node *Node) int {
     case ND_DEREF:
         r := gen_expr(node.Expr)
         // 間接参照(int型のポインタが指すメモリを参照する)のでload命令
-        add(load_insn(node), r, r)
+        load(node, r, r)
         return r
     case ND_STMT_EXPR:
         orig_label := return_label

@@ -103,6 +103,17 @@ func emit_cmp(ir *IR, insn string) {
     fmt.Printf("    movzx %s, %s\n", Regs[ir.Lhs], Regs8[ir.Lhs])
 }
 
+func reg(r int, size int) string {
+    if size == 1 {
+        return Regs8[r]
+    }
+    if size == 4 {
+        return Regs32[r]
+    }
+    Assert(size == 8, "size is not 8")
+    return Regs[r]
+}
+
 func gen(fn *Function) {
 
     var ret string = fmt.Sprintf(".Lend%d", label)
@@ -199,13 +210,18 @@ func gen(fn *Function) {
             // 今の所, lhsの(レジスタの)値が0ならラベルに飛ぶ
             fmt.Printf("    cmp %s, 0\n", Regs[lhs])
             fmt.Printf("    je .L%d\n", rhs)
-        case IR_LOAD8:
-            fmt.Printf("    mov %s, [%s]\n", Regs8[lhs], Regs[rhs])
-            fmt.Printf("    movzx %s, %s\n", Regs[lhs], Regs8[rhs])
-        case IR_LOAD32:
-            fmt.Printf("    mov %s, [%s]\n", Regs32[lhs], Regs[rhs])
-        case IR_LOAD64:
-            fmt.Printf("    mov %s, [%s]\n", Regs[lhs], Regs[rhs])
+        // case IR_LOAD8:
+        //     fmt.Printf("    mov %s, [%s]\n", Regs8[lhs], Regs[rhs])
+        //     fmt.Printf("    movzx %s, %s\n", Regs[lhs], Regs8[rhs])
+        // case IR_LOAD32:
+        //     fmt.Printf("    mov %s, [%s]\n", Regs32[lhs], Regs[rhs])
+        // case IR_LOAD64:
+        //     fmt.Printf("    mov %s, [%s]\n", Regs[lhs], Regs[rhs])
+        case IR_LOAD:
+            fmt.Printf("    mov %s, [%s]\n", reg(lhs, ir.Size), Regs[rhs])
+            if ir.Size == 1 {
+                fmt.Printf("    movzx %s, %s\n", Regs[lhs], Regs8[lhs])
+            }
         case IR_STORE8:
             fmt.Printf("    mov [%s], %s\n", Regs[lhs], Regs8[rhs])
         case IR_STORE32:

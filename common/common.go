@@ -231,9 +231,7 @@ const (
     IR_JMP
     IR_IF
     IR_UNLESS
-    IR_LOAD8
-    IR_LOAD32
-    IR_LOAD64
+    IR_LOAD
     IR_STORE8
     IR_STORE32
     IR_STORE64
@@ -249,6 +247,9 @@ type IR struct {
     Lhs int
     Rhs int
 
+    // load/store size in bytes
+    Size int
+
     // Function call
     Name string
     Nargs int
@@ -259,6 +260,7 @@ const (
     IR_TY_NOARG = iota
     IR_TY_REG
     IR_TY_IMM
+    IR_TY_MEM
     IR_TY_JMP
     IR_TY_LABEL
     IR_TY_LABEL_ADDR
