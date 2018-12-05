@@ -10,12 +10,9 @@ import (
 // 中の要素の順序はcommon.go内のirのconstと一致させる
 var Irinfo_arr []IRInfo = []IRInfo{
     // name, ty
-    {"ADD", IR_TY_REG_REG},
-    {"ADD", IR_TY_REG_IMM},
-    {"SUB", IR_TY_REG_REG},
-    {"SUB", IR_TY_REG_IMM},
-    {"MUL", IR_TY_REG_REG},
-    {"MUL", IR_TY_REG_IMM},
+    {"ADD", IR_TY_BINARY},
+    {"SUB", IR_TY_BINARY},
+    {"MUL", IR_TY_BINARY},
     {"DIV", IR_TY_REG_REG},
     {"IMM", IR_TY_REG_IMM},
     {"BPREL", IR_TY_REG_IMM},
@@ -49,6 +46,11 @@ var Irinfo_arr []IRInfo = []IRInfo{
 func tostr(ir *IR) string {
     info := Irinfo_arr[ir.Op]
     switch info.Ty {
+    case IR_TY_BINARY:
+        if ir.Is_imm {
+            return fmt.Sprintf("  %s r$d, %d", info.Name, ir.Lhs, ir.Rhs)
+        }
+        return fmt.Sprintf("  %s r%d, r%d", info.Name, ir.Lhs, ir.Rhs)
     case IR_TY_LABEL:
         return fmt.Sprintf(".L%d:", ir.Lhs)
     case IR_TY_LABEL_ADDR:

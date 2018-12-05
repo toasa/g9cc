@@ -48,6 +48,11 @@ func visit(irv *Vector) {
         ir := irv.Data[i].(*IR)
 
         switch Irinfo_arr[ir.Op].Ty {
+        case IR_TY_BINARY:
+            ir.Lhs = alloc(ir.Lhs)
+            if !ir.Is_imm {
+                ir.Rhs = alloc(ir.Rhs)
+            }
         case IR_TY_REG, IR_TY_REG_IMM, IR_TY_REG_LABEL, IR_TY_LABEL_ADDR:
             ir.Lhs = alloc(ir.Lhs)
         case IR_TY_MEM, IR_TY_REG_REG:

@@ -231,24 +231,30 @@ func gen(fn *Function) {
         case IR_STORE_ARG:
             fmt.Printf("    mov [rbp-%d], %s\n", lhs, argreg(rhs, ir.Size))
         case IR_ADD:
-            fmt.Printf("    add %s, %s\n", Regs[lhs], Regs[rhs])
-        case IR_ADD_IMM:
-            fmt.Printf("    add %s, %d\n", Regs[lhs], rhs)
+            if ir.Is_imm {
+                fmt.Printf("    add %s, %d\n", Regs[lhs], rhs)
+            } else {
+                fmt.Printf("    add %s, %s\n", Regs[lhs], Regs[rhs])
+            }
         case IR_SUB:
-            fmt.Printf("    sub %s, %s\n", Regs[lhs], Regs[rhs])
-        case IR_SUB_IMM:
-            fmt.Printf("    sub %s, %d\n", Regs[lhs], rhs)
+            if ir.Is_imm {
+                fmt.Printf("    sub %s, %d\n", Regs[lhs], rhs)
+            } else {
+                fmt.Printf("    sub %s, %s\n", Regs[lhs], Regs[rhs])
+            }
         case IR_MUL:
-            fmt.Printf("    mov rax, %s\n", Regs[rhs])
-            // mul reg: 予めrax(アキュムレータ)に格納された値と
-            //          regに格納された値の掛け算を行い,結果をraxに格納する
-            fmt.Printf("    mul %s\n", Regs[lhs])
-            // 掛け算の結果を汎用レジスタに格納する
-            fmt.Printf("    mov %s, rax\n", Regs[lhs])
-        case IR_MUL_IMM:
-            fmt.Printf("    mov rax, %d\n", rhs)
-            fmt.Printf("    mul %s\n", Regs[lhs])
-            fmt.Printf("    mov %s, rax\n", Regs[lhs])
+            if ir.Is_imm {
+                fmt.Printf("    mov rax, %d\n", rhs)
+                fmt.Printf("    mul %s\n", Regs[lhs])
+                fmt.Printf("    mov %s, rax\n", Regs[lhs])
+            } else {
+                fmt.Printf("    mov rax, %s\n", Regs[rhs])
+                // mul reg: 予めrax(アキュムレータ)に格納された値と
+                //          regに格納された値の掛け算を行い,結果をraxに格納する
+                fmt.Printf("    mul %s\n", Regs[lhs])
+                // 掛け算の結果を汎用レジスタに格納する
+                fmt.Printf("    mov %s, rax\n", Regs[lhs])
+            }
         case IR_DIV:
             // raxに左辺値を代入
             fmt.Printf("    mov rax, %s\n", Regs[lhs])

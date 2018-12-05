@@ -27,6 +27,12 @@ func add(op int, lhs int, rhs int) *IR {
     return ir
 }
 
+func add_imm(op, lhs, rhs int) *IR {
+    ir := add(op, lhs, rhs)
+    ir.Is_imm = true
+    return ir
+}
+
 func kill(r int) {
     add(IR_KILL, r, -1)
 }
@@ -73,7 +79,7 @@ func gen_lval(node *Node) int {
 
     if node.Op == ND_DOT {
         r := gen_lval(node.Expr)
-        add(IR_ADD_IMM, r, node.Offset)
+        add_imm(IR_ADD, r, node.Offset)
         return r
     }
 
@@ -114,7 +120,7 @@ func gen_pre_inc(node *Node, num int) int {
     val := nreg
     nreg++
     load(node, val, addr)
-    add(IR_ADD_IMM, val, num * gen_inc_scale(node))
+    add_imm(IR_ADD, val, num * gen_inc_scale(node))
     store(node, addr, val)
     kill(addr)
     return val
@@ -122,7 +128,7 @@ func gen_pre_inc(node *Node, num int) int {
 
 func gen_post_inc(node *Node, num int) int {
     val := gen_pre_inc(node, num)
-    add(IR_SUB_IMM, val, num * gen_inc_scale(node))
+    add_imm(IR_SUB, val, num * gen_inc_scale(node))
     return val
 }
 
@@ -250,7 +256,7 @@ func gen_expr(node *Node) int {
         }
 
         rhs := gen_expr(node.Rhs)
-        add(IR_MUL_IMM, rhs, node.Lhs.Ty.Ptr_to.Size)
+        add_imm(IR_MUL, rhs, node.Lhs.Ty.Ptr_to.Size)
 
         lhs := gen_expr(node.Lhs)
 

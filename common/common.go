@@ -204,11 +204,8 @@ type IRInfo struct {
 
 const (
     IR_ADD = iota
-    IR_ADD_IMM
     IR_SUB
-    IR_SUB_IMM
     IR_MUL
-    IR_MUL_IMM
     IR_DIV
     IR_IMM
     IR_BPREL
@@ -246,6 +243,10 @@ type IR struct {
     // load/store size in bytes
     Size int
 
+    // For binary operator.
+    // If true, rhs is an immediate value.
+    Is_imm bool
+
     // Function call
     Name string
     Nargs int
@@ -254,6 +255,7 @@ type IR struct {
 
 const (
     IR_TY_NOARG = iota
+    IR_TY_BINARY
     IR_TY_REG
     IR_TY_IMM
     IR_TY_MEM
