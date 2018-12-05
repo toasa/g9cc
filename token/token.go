@@ -141,18 +141,6 @@ func Tokenize(s string) *Vector {
 
             // Block comment
             if s[i_input:i_input+2] == "/*" {
-                // i_input += 2
-                // for true {
-                //     if s[i_input] == '\000' {
-                //         Error("premature end of input")
-                //     }
-                //     if s[i_input:i_input+2] == "*/" {
-                //         i_input += 2
-                //         break
-                //     }
-                //     i_input++
-                // }
-                // continue
                 for i_input += 2; ; i_input++ {
                     if s[i_input:i_input+2] != "*/" {
                         continue
