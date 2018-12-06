@@ -265,12 +265,12 @@ func walk(node *Node, decay bool) *Node {
         }
         node.Ty = &int_ty
         return node
-    case ND_FUNC:
-        for i := 0; i < node.Args.Len; i++ {
-            node.Args.Data[i] = walk(node.Args.Data[i].(*Node), true)
-        }
-        node.Body = walk(node.Body, true)
-        return node
+    // case ND_FUNC:
+    //     for i := 0; i < node.Args.Len; i++ {
+    //         node.Args.Data[i] = walk(node.Args.Data[i].(*Node), true)
+    //     }
+    //     node.Body = walk(node.Body, true)
+    //     return node
     case ND_COMP_STMT:
         env = new_env(env)
         for i := 0; i < node.Stmts.Len; i++ {
@@ -309,7 +309,11 @@ func Sema(nodes *Vector) *Vector {
 
         stacksize = 0
 
-        walk(node, true)
+        for i := 0; i < node.Args.Len; i++ {
+            node.Args.Data[i] = walk(node.Args.Data[i].(*Node), true)
+        }
+        node.Body = walk(node.Body, true)
+
         node.Stacksize = stacksize
     }
 
