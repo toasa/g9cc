@@ -227,4 +227,7 @@ try 1 'int main() { int i = 5; i &= 3; return i; }'
 try 6 'int main() { int i = 5; i ^= 3; return i; }'
 try 7 'int main() { int i = 5; i |= 3; return i; }'
 
+try 3 'int main() { int x; int y; x=y=3; return x; }'
+try 3 'int main() { int x; int y; x=y=3; return y; }'
+
 echo OK

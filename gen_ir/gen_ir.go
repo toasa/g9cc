@@ -271,8 +271,8 @@ func gen_expr(node *Node) int {
         // lhsはメモリへstoreするためのアドレスが格納されたレジスタ(の番号)が入っている
         var lhs int = gen_lval(node.Lhs)
         store(node, lhs, rhs)
-        kill(rhs)
-        return lhs
+        kill(lhs)
+        return rhs
     case '+', '-':
         var insn int
         // Goには三項演算子がない

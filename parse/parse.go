@@ -497,7 +497,7 @@ func assign() *Node {
     lhs := conditional()
     op := assignment_op()
     if op != 0 {
-        return new_binop(op, lhs, conditional())
+        return new_binop(op, lhs, assign())
     }
     return lhs
 }
