@@ -45,17 +45,6 @@ func jmp(x int) {
     add(IR_JMP, x, -1)
 }
 
-// func choose_insn(node *Node, op8, op32, op64 int) int {
-//
-//     if node.Ty.Size == 1 {
-//         return op8
-//     } else if node.Ty.Size == 4 {
-//         return op32
-//     }
-//     Assert(node.Ty.Size == 8, "unmatched size")
-//     return op64
-// }
-
 func load(node *Node, dst int, src int) {
     ir := add(IR_LOAD, dst, src)
     ir.Size = node.Ty.Size
@@ -129,6 +118,46 @@ func gen_pre_inc(node *Node, num int) int {
 func gen_post_inc(node *Node, num int) int {
     val := gen_pre_inc(node, num)
     add_imm(IR_SUB, val, num * gen_inc_scale(node))
+    return val
+}
+
+func to_assign_op(op int) int {
+    switch op {
+    case ND_MUL_EQ:
+        return IR_MUL
+    case ND_DIV_EQ:
+        return IR_DIV
+    case ND_MOD_EQ:
+        return IR_MOD
+    case ND_ADD_EQ:
+        return IR_ADD
+    case ND_SUB_EQ:
+        return IR_SUB
+    case ND_SHL_EQ:
+        return IR_SHL
+    case ND_SHR_EQ:
+        return IR_SHR
+    case ND_BITAND_EQ:
+        return IR_AND
+    case ND_XOR_EQ:
+        return IR_XOR
+    default:
+        Assert(op == ND_BITOR_EQ, "op is not ND_BITOR_EQ")
+        return IR_OR
+    }
+}
+
+func gen_assign_op(node *Node) int {
+    src := gen_expr(node.Rhs)
+    dst := gen_lval(node.Lhs)
+    val := nreg
+    nreg++
+
+    load(node, val, dst)
+    add(to_assign_op(node.Op), val, src)
+    kill(src)
+    store(node, dst, val)
+    kill(dst)
     return val
 }
 
@@ -235,6 +264,8 @@ func gen_expr(node *Node) int {
         return_label = orig_label
         return_reg = orig_reg
         return r
+    case ND_MUL_EQ, ND_DIV_EQ, ND_MOD_EQ, ND_ADD_EQ, ND_SUB_EQ, ND_SHL_EQ, ND_SHR_EQ, ND_BITAND_EQ, ND_XOR_EQ, ND_BITOR_EQ:
+        return gen_assign_op(node)
     case '=':
         var rhs int = gen_expr(node.Rhs)
         // lhsはメモリへstoreするためのアドレスが格納されたレジスタ(の番号)が入っている
@@ -461,18 +492,6 @@ func gen_stmt(node *Node) {
 func Gen_ir(nodes *Vector) *Vector{
 
     v := New_vec()
-
-    // ===変数名(型)===
-    // v(*Vector)
-    // | - Data([]*Function)-
-    // |                    | - Name(string)
-    // |                    | - Args([6]int)
-    // |                    | - Ir(*Vector) -
-    // |                                    | - code(*Vector)-
-    // |                                                     | - Data([]*IR): ここに関数の中身の
-    // |                                                                      中間表現が格納される
-    // |
-    // |
 
     for i := 0; i < nodes.Len; i++ {
         node := nodes.Data[i].(*Node)

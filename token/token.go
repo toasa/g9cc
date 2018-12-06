@@ -17,12 +17,17 @@ func add_token(v *Vector, ty int, input string) *Token {
 }
 
 var symbols map[string]int = map[string]int {
+    "<<=": TK_SHL_EQ, ">>=": TK_SHR_EQ,
     "!=": TK_NE, "&&": TK_LOGAND,
     "++": TK_INC, "--": TK_DEC,
     "->": TK_ARROW, "<<": TK_SHL,
     "<=": TK_LE, "==": TK_EQ,
     ">=": TK_GE, ">>": TK_SHR,
-    "||": TK_LOGOR,
+    "||": TK_LOGOR, "*=": TK_MUL_EQ,
+    "/=": TK_DIV_EQ, "%=": TK_MOD_EQ,
+    "+=": TK_ADD_EQ, "-=": TK_SUB_EQ,
+    "&=": TK_BITAND_EQ, "^=": TK_XOR_EQ,
+    "|=": TK_BITOR_EQ,
 }
 
 var keywords map[string]int = map[string]int {
@@ -165,14 +170,28 @@ func Tokenize(s string) *Vector {
                 continue
             }
 
-            // Two-bytes symbol
-            symbol := s[i_input:i_input+2]
-            ty, ok := symbols[symbol]
+            // Three bytes symbol
+            // このifの条件はその直後の文字列のスライスを正常に行うため
+            if i_input < len(s) - 3 {
+                symbol_3 := s[i_input:i_input+3]
+                ty, ok := symbols[symbol_3]
+                if ok {
+                    add_token(v, ty, symbol_3)
+                    i_input += 3
+                    goto loop
+                }
+            }
+
+            // Two bytes symbol
+            symbol_2 := s[i_input:i_input+2]
+            ty, ok := symbols[symbol_2]
             if ok {
-                add_token(v, ty, symbol)
+                add_token(v, ty, symbol_2)
                 i_input += 2
                 goto loop
             }
+
+
 
             // Single-letter symbol
             if strings.Contains("+-*/;=(),{}<>[]&.!?:|^%", string(s[i_input])) {

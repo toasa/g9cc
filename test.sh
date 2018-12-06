@@ -216,4 +216,15 @@ try 2 'int main() { int i = 3; return --i; }'
 
 try 4 'int main() { int elseof= 4; return elseof; }'
 
+try 15 'int main() { int i = 5; i *= 3; return i; }'
+try 1 'int main() { int i = 5; i /= 3; return i; }'
+try 2 'int main() { int i = 5; i %= 3; return i; }'
+try 8 'int main() { int i = 5; i += 3; return i; }'
+try 2 'int main() { int i = 5; i -= 3; return i; }'
+try 40 'int main() { int i = 5; i <<= 3; return i; }'
+try 0 'int main() { int i = 5; i >>= 3; return i; }'
+try 1 'int main() { int i = 5; i &= 3; return i; }'
+try 6 'int main() { int i = 5; i ^= 3; return i; }'
+try 7 'int main() { int i = 5; i |= 3; return i; }'
+
 echo OK

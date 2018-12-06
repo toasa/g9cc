@@ -464,14 +464,42 @@ func conditional() *Node {
     return node
 }
 
+func assignment_op() int {
+    if consume('=') {
+        return '='
+    } else if consume(TK_MUL_EQ) {
+        return ND_MUL_EQ
+    } else if consume(TK_DIV_EQ) {
+        return ND_DIV_EQ
+    } else if consume(TK_MOD_EQ) {
+        return ND_MOD_EQ
+    } else if consume(TK_ADD_EQ) {
+        return ND_ADD_EQ
+    } else if consume(TK_SUB_EQ) {
+        return ND_SUB_EQ
+    } else if consume(TK_SHL_EQ) {
+        return ND_SHL_EQ
+    } else if consume(TK_SHR_EQ) {
+        return ND_SHR_EQ
+    } else if consume(TK_BITAND_EQ) {
+        return ND_BITAND_EQ
+    } else if consume(TK_XOR_EQ) {
+        return ND_XOR_EQ
+    } else if consume(TK_BITOR_EQ) {
+        return ND_BITOR_EQ
+    } else {
+        return 0
+    }
+}
+
 // '='を処理する
 func assign() *Node {
     lhs := conditional()
-    if !consume('=') {
-        return lhs
+    op := assignment_op()
+    if op != 0 {
+        return new_binop(op, lhs, conditional())
     }
-    // '='文の場合
-    return new_binop('=', lhs, conditional())
+    return lhs
 }
 
 // 演算子優先順位の最下位
