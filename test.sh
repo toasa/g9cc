@@ -214,4 +214,6 @@ try 4 'int main() { int i = 3; return ++i; }'
 try 3 'int main() { int i = 3; return i--; }'
 try 2 'int main() { int i = 3; return --i; }'
 
+try 4 'int main() { int elseof= 4; return elseof; }'
+
 echo OK

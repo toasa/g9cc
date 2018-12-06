@@ -16,27 +16,23 @@ func add_token(v *Vector, ty int, input string) *Token {
     return t
 }
 
-// var keywords *Map
-// var keywords map[string]interface{}
+var symbols map[string]int = map[string]int {
+    "!=": TK_NE, "&&": TK_LOGAND,
+    "++": TK_INC, "--": TK_DEC,
+    "->": TK_ARROW, "<<": TK_SHL,
+    "<=": TK_LE, "==": TK_EQ,
+    ">=": TK_GE, ">>": TK_SHR,
+    "||": TK_LOGOR,
+}
 
-var symbols = []struct {
-    name string
-    ty int
-}{
-    {"_Alignof", TK_ALIGNOF}, {"break", TK_BREAK},
-    {"char", TK_CHAR},
-    {"do", TK_DO},{"else", TK_ELSE},
-    {"extern", TK_EXTERN}, {"for", TK_FOR},
-    {"if", TK_IF}, {"int", TK_INT},
-    {"return", TK_RETURN}, {"sizeof", TK_SIZEOF},
-    {"struct", TK_STRUCT}, {"typedef", TK_TYPEDEF},
-    {"void", TK_VOID}, {"while", TK_WHILE},
-    {"!=", TK_NE}, {"&&", TK_LOGAND},
-    {"++", TK_INC}, {"--", TK_DEC},
-    {"->", TK_ARROW}, {"<<", TK_SHL},
-    {"<=", TK_LE}, {"==", TK_EQ},
-    {">=", TK_GE},{">>", TK_SHR},
-    {"||", TK_LOGOR}, {"NULL", 0},
+var keywords map[string]int = map[string]int {
+    "_Alignof": TK_ALIGNOF, "break": TK_BREAK,
+    "char": TK_CHAR, "do": TK_DO,
+    "else": TK_ELSE, "extern": TK_EXTERN,
+    "for": TK_FOR, "if": TK_IF, "int": TK_INT,
+    "return": TK_RETURN, "sizeof": TK_SIZEOF,
+    "struct": TK_STRUCT, "typedef": TK_TYPEDEF,
+    "void": TK_VOID, "while": TK_WHILE,
 }
 
 var escaped [256]int32;
@@ -125,7 +121,7 @@ func Tokenize(s string) *Vector {
     loop:
         for s[i_input] != '\000' {
 
-            // skip white space, new line and tub.
+            // skip white space, new line and tab.
             if isspace(s[i_input]) || s[i_input] == '\n' || s[i_input] == '\t'{
                 i_input++
                 continue
@@ -169,47 +165,47 @@ func Tokenize(s string) *Vector {
                 continue
             }
 
-            // Multi-letter token
-            for i := 0; symbols[i].name != "NULL"; i++ {
-                name := symbols[i].name
-                l := len(name)
-
-                // 下のs[i_input:i_input+l]でスライスの右側が文字列の長さを超えることがあり、
-                // errorが出ていたため、ここを記述.
-                if len(s) <= i_input + l {
-                    continue
-                }
-                if s[i_input:i_input+l] != name {
-                    continue
-                }
-
-                add_token(v, symbols[i].ty, name)
-                //i++
-                i_input += l
+            // Two-bytes symbol
+            symbol := s[i_input:i_input+2]
+            ty, ok := symbols[symbol]
+            if ok {
+                add_token(v, ty, symbol)
+                i_input += 2
                 goto loop
             }
 
-            // Single-letter token
+            // Single-letter symbol
             if strings.Contains("+-*/;=(),{}<>[]&.!?:|^%", string(s[i_input])) {
                 add_token(v, int(s[i_input]), string(s[i_input]))
                 i_input++
                 continue
             }
 
-            // Identifier
+            // Keyword or identifier
             if isalpha(s[i_input]) || s[i_input] == '_' {
 
-                len := 1
+                len_ := 1
                 // identifierを切りだすための添字の取得
-                for i := len + i_input; isalpha(s[i]) || isdigit(s[i]) || s[i] == '_'; {
-                    len++
-                    i = len + i_input
+                for i := len_ + i_input; isalpha(s[i]) || isdigit(s[i]) || s[i] == '_'; {
+                    len_++
+                    i = len_ + i_input
                 }
 
-                t := add_token(v, TK_IDENT, s[i_input:len + i_input])
+                name := s[i_input:len_ + i_input]
 
-                t.Name = s[i_input:len + i_input]
-                i_input += len
+                ty, ok := keywords[name]
+
+                if ok {
+                    // Keyword(ex. if, extern...)の場合
+                    add_token(v, ty, name)
+                    i_input += len(name)
+                    goto loop
+                }
+
+                t := add_token(v, TK_IDENT, name)
+
+                t.Name = name
+                i_input += len_
                 continue
             }
 
