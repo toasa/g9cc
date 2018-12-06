@@ -254,7 +254,7 @@ func walk(node *Node, decay bool) *Node {
         node.Rhs = walk(node.Rhs, true)
         node.Ty = node.Rhs.Ty
         return node
-    case ND_POST_INC, ND_POST_DEC, ND_NEG, '!':
+    case ND_POST_INC, ND_POST_DEC, ND_NEG, '!', '~':
         node.Expr = walk(node.Expr, true)
         node.Ty = node.Expr.Ty
         return node

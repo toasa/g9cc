@@ -37,6 +37,9 @@ try2() {
     fi
 }
 
+try 0 'int main() { return ~(-1); }'
+try 3 'int main() { return ~(-4); }'
+
 try 4 'int main() { typedef int myint; myint foo = 3; return sizeof(foo); }'
 try 1 'int main() { typedef struct foo_ foo; return 1; }'
 
@@ -192,6 +195,9 @@ try 5 'int main() { return 6 ^ 3; }'
 
 try 2 'int main() { return 6 & 3; }'
 try 0 'int main() { return 6 & 0; }'
+
+try 0 'int main() { return ~(-1); }'
+try 3 'int main() { return ~(-4); }'
 
 try 1 'int main() { return 4 <= 5; }'
 try 1 'int main() { return 5 <= 5; }'

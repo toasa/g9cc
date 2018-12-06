@@ -297,6 +297,10 @@ func gen_expr(node *Node) int {
         return gen_binop(IR_SHL, node)
     case ND_SHR:
         return gen_binop(IR_SHR, node)
+    case '~':
+        r := gen_expr(node.Expr)
+        add_imm(IR_XOR, r, -1)
+        return r
     case ND_NEG:
         r := gen_expr(node.Expr)
         add(IR_NEG, r, -1)

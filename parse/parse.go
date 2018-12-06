@@ -326,6 +326,9 @@ func unary() *Node {
     if consume('!') {
         return new_expr('!', unary())
     }
+    if consume('~') {
+        return new_expr('~', unary())
+    }
     if consume(TK_SIZEOF) {
         return new_expr(ND_SIZEOF, unary())
     }
