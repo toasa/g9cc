@@ -194,6 +194,14 @@ func new_expr(op int, expr *Node) *Node {
     return node
 }
 
+func new_num(val int) *Node {
+    node := new(Node)
+    node.Op = ND_NUM
+    node.Ty = int_ty()
+    node.Val = val
+    return node
+}
+
 func ident() string {
     t := tokens.Data[pos].(*Token)
     pos++
@@ -226,10 +234,7 @@ func primary() *Node {
     node := new(Node)
 
     if t.Ty == TK_NUM {
-        node.Ty = int_ty()
-        node.Op = ND_NUM
-        node.Val = t.Val
-        return node
+        return new_num(t.Val)
     }
 
     if t.Ty == TK_STR {
@@ -321,17 +326,17 @@ func unary() *Node {
     if consume('!') {
         return new_expr('!', unary())
     }
-    if consume(TK_INC) {
-        return new_expr(ND_PRE_INC, unary())
-    }
-    if consume(TK_DEC) {
-        return new_expr(ND_PRE_DEC, unary())
-    }
     if consume(TK_SIZEOF) {
         return new_expr(ND_SIZEOF, unary())
     }
     if consume(TK_ALIGNOF) {
         return new_expr(ND_ALIGNOF, unary())
+    }
+    if consume(TK_INC) {
+        return new_binop(ND_ADD_EQ, unary(), new_num(1))
+    }
+    if consume(TK_DEC) {
+        return new_binop(ND_SUB_EQ, unary(), new_num(1))
     }
     return postfix()
 }

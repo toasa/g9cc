@@ -96,6 +96,16 @@ func new_int(val int) *Node {
     return node
 }
 
+// Scales operand for pointer arithmetic.
+// ex. ptr+1 becomes ptr+4 for integer and become ptr+8 for pointer
+func scale_ptr(node *Node, ty *Type) *Node {
+    e := new(Node)
+    e.Op = '*'
+    e.Lhs = node
+    e.Rhs = new_int(ty.Ptr_to.Size)
+    return e
+}
+
 // ASTを渡り歩く
 func walk(node *Node, decay bool) *Node {
     switch node.Op {
@@ -186,9 +196,22 @@ func walk(node *Node, decay bool) *Node {
             Error(fmt.Sprintf("pointer %c pointer is not defined", node.Op))
         }
 
+        if node.Lhs.Ty.Ty == PTR {
+            node.Rhs = scale_ptr(node.Rhs, node.Lhs.Ty)
+        }
+
         node.Ty = node.Lhs.Ty
         return node
-    case '=', ND_MUL_EQ, ND_DIV_EQ, ND_MOD_EQ, ND_ADD_EQ, ND_SUB_EQ, ND_SHL_EQ, ND_SHR_EQ, ND_BITAND_EQ, ND_XOR_EQ, ND_BITOR_EQ:
+    case ND_ADD_EQ, ND_SUB_EQ:
+        node.Lhs = walk(node.Lhs, false)
+        check_lval(node.Lhs)
+        node.Rhs = walk(node.Rhs, true)
+        node.Ty = node.Lhs.Ty
+        if node.Lhs.Ty.Ty == PTR {
+            node.Rhs = scale_ptr(node.Rhs, node.Lhs.Ty)
+        }
+        return node
+    case '=', ND_MUL_EQ, ND_DIV_EQ, ND_MOD_EQ, ND_SHL_EQ, ND_SHR_EQ, ND_BITAND_EQ, ND_XOR_EQ, ND_BITOR_EQ:
         node.Lhs = walk(node.Lhs, false)
         check_lval(node.Lhs)
         node.Rhs = walk(node.Rhs, true)
@@ -231,7 +254,7 @@ func walk(node *Node, decay bool) *Node {
         node.Rhs = walk(node.Rhs, true)
         node.Ty = node.Rhs.Ty
         return node
-    case ND_PRE_INC, ND_PRE_DEC, ND_POST_INC, ND_POST_DEC, ND_NEG, '!':
+    case ND_POST_INC, ND_POST_DEC, ND_NEG, '!':
         node.Expr = walk(node.Expr, true)
         node.Ty = node.Expr.Ty
         return node

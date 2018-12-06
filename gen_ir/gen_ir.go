@@ -273,28 +273,10 @@ func gen_expr(node *Node) int {
         store(node, lhs, rhs)
         kill(lhs)
         return rhs
-    case '+', '-':
-        var insn int
-        // Goには三項演算子がない
-        if node.Op == '+' {
-            insn = IR_ADD
-        } else {
-            insn = IR_SUB
-        }
-
-        if node.Lhs.Ty.Ty != PTR {
-            return gen_binop(insn, node)
-        }
-
-        rhs := gen_expr(node.Rhs)
-        add_imm(IR_MUL, rhs, node.Lhs.Ty.Ptr_to.Size)
-
-        lhs := gen_expr(node.Lhs)
-
-        add(insn, lhs, rhs)
-        kill(rhs)
-
-        return lhs
+    case '+':
+        return gen_binop(IR_ADD, node)
+    case '-':
+        return gen_binop(IR_SUB, node)
     case '*':
         return gen_binop(IR_MUL, node)
     case '/':
@@ -319,10 +301,6 @@ func gen_expr(node *Node) int {
         r := gen_expr(node.Expr)
         add(IR_NEG, r, -1)
         return r
-    case ND_PRE_INC:
-        return gen_pre_inc(node, 1)
-    case ND_PRE_DEC:
-        return gen_pre_inc(node, -1)
     case ND_POST_INC:
         return gen_post_inc(node, 1)
     case ND_POST_DEC:
