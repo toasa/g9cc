@@ -49,12 +49,7 @@ import (
 
 var label int
 
-// 関数の引数の値を代入するためのレジスタ
-var argreg8 []string = []string{"dil", "sil", "dl", "cl", "r8b", "r9b"}
-var argreg32 []string = []string{"edi", "esi", "edx", "ecx", "r8d", "r9d"}
-var argreg64 []string = []string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
-
-func escape(s string, len int) string {
+func backslash_escape(s string, len int) string {
     var escaped[256]int32
     escaped['\b'] = 'b'
     escaped['\f'] = 'f'
@@ -116,13 +111,13 @@ func reg(r int, size int) string {
 
 func argreg(r int, size int) string {
     if size == 1 {
-        return argreg8[r]
+        return Argregs8[r]
     }
     if size == 4 {
-        return argreg32[r]
+        return Argregs32[r]
     }
     Assert(size == 8, "size is not 8")
-    return argreg64[r]
+    return Argregs[r]
 }
 
 func gen(fn *Function) {
@@ -162,7 +157,7 @@ func gen(fn *Function) {
             fmt.Printf("    jmp %s\n", ret)
         case IR_CALL:
             for i := 0; i < ir.Nargs; i++ {
-                fmt.Printf("    mov %s, %s\n", argreg64[i], Regs[ir.Args[i]])
+                fmt.Printf("    mov %s, %s\n", Argregs[i], Regs[ir.Args[i]])
             }
 
             fmt.Printf("    push r10\n")
@@ -304,7 +299,7 @@ func Gen_x86(globals *Vector, fns *Vector) {
         fmt.Printf("%s:\n", var_.Name)
 
         if len(var_.Data + "\u0000") == var_.Len {
-            fmt.Printf("    .ascii \"%s\"\n", escape(var_.Data + "\u0000", var_.Len))
+            fmt.Printf("    .ascii \"%s\"\n", backslash_escape(var_.Data + "\u0000", var_.Len))
         } else {
             fmt.Printf("    .ascii \"%s\"\n", strings.Repeat("\\000", var_.Len))
         }
